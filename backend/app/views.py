@@ -13,8 +13,9 @@ from django.conf import settings
 
 
 def main(request):
-  template = loader.get_template('ApiCall.html')
-  return render(request, 'ApiCall.html')
+  user = User.objects.all()
+  print(user)
+  return render(request, 'ApiCall.html', {'user': user})
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

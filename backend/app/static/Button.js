@@ -67,7 +67,6 @@ function createDummyUser() {
         name: 'Test',
         first_name: "Test",
         last_name: "Test",
-        date_of_birth: "1990-01-01"
     }
   
     console.log('Updated Data:', data);
@@ -115,7 +114,6 @@ function addEntryID() {
         name: 'Test',
         first_name: "Test",
         last_name: "Test",
-        date_of_birth: "1990-01-01"
     }
 
     console.log('Updated Data:', data);
