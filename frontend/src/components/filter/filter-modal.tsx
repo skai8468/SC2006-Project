@@ -1,11 +1,11 @@
-import { X } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { PROPERTIES } from '@/data/properties';
-import { Button } from '../ui/button';
-import { FilterSection } from './filter-section';
-import { PriceRangeSlider } from './price-range-slider';
-import { PropertyTypeSelector } from './property-type-selector';
-import { RoomCounter } from './room-counter';
+import { X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { PROPERTIES } from "@/data/properties";
+import { Button } from "../ui/button";
+import { FilterSection } from "./filter-section";
+import { PriceRangeSlider } from "./price-range-slider";
+import { PropertyTypeSelector } from "./property-type-selector";
+import { RoomCounter } from "./room-counter";
 
 export interface FilterValues {
   propertyTypes: string[];
@@ -22,22 +22,29 @@ interface FilterModalProps {
   onApply: (filters: FilterValues) => void;
 }
 
-const PLACE_TYPES = ['Entire Place', 'Private Room', 'Shared Room'];
-const PROPERTY_TYPES = ['HDB', 'Condo', 'Landed', 'Apartment', 'Penthouse', 'Studio'];
+const PLACE_TYPES = ["Entire Place", "Private Room", "Shared Room"];
+const PROPERTY_TYPES = [
+  "HDB",
+  "Condo",
+  "Landed",
+  "Apartment",
+  "Penthouse",
+  "Studio",
+];
 const AMENITIES = [
-  'Air Conditioning',
-  'Swimming Pool',
-  'Gym',
-  'Parking',
-  'Security',
-  'Balcony',
-  'Garden',
-  'Smart Home',
-  'Pet Friendly',
-  'Washing Machine',
-  'Dryer',
-  'Wi-Fi',
-  'Kitchen',
+  "Air Conditioning",
+  "Swimming Pool",
+  "Gym",
+  "Parking",
+  "Security",
+  "Balcony",
+  "Garden",
+  "Smart Home",
+  "Pet Friendly",
+  "Washing Machine",
+  "Dryer",
+  "Wi-Fi",
+  "Kitchen",
 ];
 
 export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
@@ -52,7 +59,9 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
 
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [filteredCount, setFilteredCount] = useState(PROPERTIES.length);
-  const displayedAmenities = showAllAmenities ? AMENITIES : AMENITIES.slice(0, 6);
+  const displayedAmenities = showAllAmenities
+    ? AMENITIES
+    : AMENITIES.slice(0, 6);
 
   // Calculate filtered properties count whenever filters change
   useEffect(() => {
@@ -81,7 +90,9 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
 
       if (
         filters.amenities.length > 0 &&
-        !filters.amenities.every((amenity) => property.amenities.includes(amenity))
+        !filters.amenities.every((amenity) =>
+          property.amenities.includes(amenity)
+        )
       ) {
         return false;
       }
@@ -94,12 +105,12 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
@@ -127,7 +138,9 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
           >
             <X className="h-5 w-5" />
           </button>
-          <h2 className="text-center text-lg font-semibold dark:text-white">Filters</h2>
+          <h2 className="text-center text-lg font-semibold dark:text-white">
+            Filters
+          </h2>
         </div>
 
         {/* Content */}
@@ -148,8 +161,8 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
                   }}
                   className={`rounded-full border px-4 py-2 transition-colors ${
                     filters.placeType.includes(type)
-                      ? 'border-blue-500 bg-blue-50 text-blue-500 dark:border-blue-400 dark:bg-blue-900/50 dark:text-blue-400'
-                      : 'border-gray-300 hover:border-gray-400 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600'
+                      ? "border-blue-500 bg-blue-50 text-blue-500 dark:border-blue-400 dark:bg-blue-900/50 dark:text-blue-400"
+                      : "border-gray-300 hover:border-gray-400 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600"
                   }`}
                 >
                   {type}
@@ -162,7 +175,9 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
           <FilterSection title="Price Range">
             <PriceRangeSlider
               value={filters.priceRange}
-              onChange={(value) => setFilters((prev) => ({ ...prev, priceRange: value }))}
+              onChange={(value) =>
+                setFilters((prev) => ({ ...prev, priceRange: value }))
+              }
             />
           </FilterSection>
 
@@ -171,7 +186,9 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
             <PropertyTypeSelector
               types={PROPERTY_TYPES}
               selected={filters.propertyTypes}
-              onChange={(types) => setFilters((prev) => ({ ...prev, propertyTypes: types }))}
+              onChange={(types) =>
+                setFilters((prev) => ({ ...prev, propertyTypes: types }))
+              }
             />
           </FilterSection>
 
@@ -181,12 +198,16 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
               <RoomCounter
                 label="Bedrooms"
                 value={filters.bedrooms}
-                onChange={(value) => setFilters((prev) => ({ ...prev, bedrooms: value }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, bedrooms: value }))
+                }
               />
               <RoomCounter
                 label="Bathrooms"
                 value={filters.bathrooms}
-                onChange={(value) => setFilters((prev) => ({ ...prev, bathrooms: value }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, bathrooms: value }))
+                }
               />
             </div>
           </FilterSection>
@@ -209,7 +230,9 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
                     }}
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-900"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">{amenity}</span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {amenity}
+                  </span>
                 </label>
               ))}
             </div>
@@ -218,7 +241,7 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
                 onClick={() => setShowAllAmenities(!showAllAmenities)}
                 className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                {showAllAmenities ? 'Show less' : 'Show more'}
+                {showAllAmenities ? "Show less" : "Show more"}
               </button>
             )}
           </FilterSection>
@@ -233,7 +256,8 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
             Clear all
           </button>
           <Button onClick={() => onApply(filters)}>
-            Show {filteredCount} {filteredCount === 1 ? 'property' : 'properties'}
+            Show {filteredCount}{" "}
+            {filteredCount === 1 ? "property" : "properties"}
           </Button>
         </div>
       </div>

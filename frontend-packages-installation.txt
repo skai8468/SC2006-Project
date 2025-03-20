@@ -1,0 +1,22 @@
+brew install nvm
+
+# modify .zshrc
+export NVM_DIR="$HOME/.nvm"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh" # Homebrew version
+[ -s "/opt/homebrew/opt/nvm/etc/bash_completion" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion"
+
+source ~/.zshrc
+
+nvm install 20
+nvm use 20
+
+npm install react react-dom
+npm install react-router-dom
+npm install --save-dev @types/react @types/react-dom
+
+
+npm install --save-dev vite
+npm install @vitejs/plugin-react
+npm install path-browserify --save-dev
+npm install --save-dev @types/node
+
