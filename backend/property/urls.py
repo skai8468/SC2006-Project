@@ -7,5 +7,6 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 urlpatterns = [
-    path('properties/', views.PropertyView.as_view(), name='properties_list'),
+    path('all/', views.PropertyView.as_view(), name='properties_list'),
+    path('details/<int:pk>/', views.PropertyDetailView.as_view(), name='property_detail'),
 ]
