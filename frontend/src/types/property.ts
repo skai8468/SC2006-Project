@@ -1,16 +1,19 @@
 export interface Property {
   id: number;
   title: string;
-  location: string;
   price: number;
   bedrooms: number;
   bathrooms: number;
-  sqft: number;
+  square_feet: number;
   type: string;
   coordinates: [number, number];
   description: string;
   amenities: string[];
   image: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
 }
 
 export interface MapProperty {
