@@ -179,7 +179,6 @@ export function PropertiesPage() {
     placeType: [],
   });
 
-  // Fetch properties from API
   useEffect(() => {
     const loadProperties = async () => {
       try {
@@ -195,9 +194,7 @@ export function PropertiesPage() {
         //   types: activeFilters.propertyTypes.join(','),
         //   amenities: activeFilters.amenities.join(','),
         // });
-        const data = await fetchPropertiesWithGeocode({
-          // No filters applied initially to get all properties
-        });
+        const data = await fetchPropertiesWithGeocode();
         console.log('Received properties data:', data);
         setProperties(data);
       } catch (err) {
@@ -217,26 +214,6 @@ export function PropertiesPage() {
     const loadProperties = async () => {
       try {
         setLoading(true);
-        const data = await fetchPropertiesWithGeocode();
-        setProperties(data);
-      } catch (err) {
-        setError('Failed to load properties');
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    loadProperties();
-  }, []);
-
-  useEffect(() => {
-    const loadFilteredProperties = async () => {
-      try {
-        setLoading(true);
-        console.log('Applying filters:', {
-          search: debouncedSearchQuery,
-          activeFilters
-        });
         const data = await fetchPropertiesWithGeocode({
           search: debouncedSearchQuery,
           min_price: activeFilters.priceRange[0],
@@ -245,25 +222,18 @@ export function PropertiesPage() {
           bathrooms: activeFilters.bathrooms,
           types: activeFilters.propertyTypes.join(','),
           amenities: activeFilters.amenities.join(','),
+          requireCoordinates: showMap,
         });
-        console.log('Filtered properties:', data);
         setProperties(data);
       } catch (err) {
-        console.error('Filter error:', err);
+        setError('Failed to load properties');
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-
-    if (debouncedSearchQuery || 
-      activeFilters.propertyTypes.length > 0 ||
-      activeFilters.bedrooms > 0 ||
-      activeFilters.bathrooms > 0 ||
-      activeFilters.amenities.length > 0 ||
-      activeFilters.priceRange[0] > 0 || 
-      activeFilters.priceRange[1] < 10000) {
-        loadFilteredProperties();
-      }
+  
+    loadProperties();
   }, [debouncedSearchQuery, activeFilters]);
   
   console.log('Rendering with:', {
@@ -354,7 +324,10 @@ export function PropertiesPage() {
                 <PropertyCard
                   key={property.id}
                   {...property}
-                  isNew={new Date(property.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+                  isNew={property.created_at ? 
+                    new Date(property.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : 
+                    false
+                  }
                 />
               ))}
             </div>

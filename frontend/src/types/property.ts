@@ -14,6 +14,7 @@ export interface Property {
   city: string;
   state: string;
   zip_code: string;
+  created_at?: Date | string;
 }
 
 export interface MapProperty {

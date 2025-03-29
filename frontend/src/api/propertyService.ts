@@ -2,8 +2,9 @@ import axios from 'axios';
 import { Property } from '@/types/property';
 import { geocodeSingaporeAddress } from '../components/utility/geocode.ts';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/app';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/app';
+const DEFAULT_COORDS: [number, number] = [1.3521, 103.8198]; // Singapore coordinates
 interface FetchPropertiesParams {
   search?: string;
   min_price?: number;
@@ -12,6 +13,7 @@ interface FetchPropertiesParams {
   bathrooms?: number;
   types?: string;
   amenities?: string;
+  requireCoordinates?: boolean;
 }
 
 // export const fetchProperties = async (params: any = {}) => {
@@ -28,34 +30,36 @@ interface FetchPropertiesParams {
 //   }
 // };
 
-export const fetchPropertiesWithGeocode = async () => {
+export const fetchPropertiesWithGeocode = async (params: FetchPropertiesParams = {}) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/properties/`);
+    // Destructure the params to separate the requireCoordinates flag
+    const { requireCoordinates = false, ...apiParams } = params;
+    
+    const response = await axios.get(`${API_BASE_URL}/properties/`, { 
+      params: apiParams  // Pass all other params to the API
+    });
     const properties = response.data;
 
-    const propertiesWithCoords = await Promise.all(
-      properties.map(async (property: Property) => {
-        try {
-          const fullAddress = `${property.address}, ${property.zip_code}, Singapore`;
-          const coordinates = await geocodeSingaporeAddress(fullAddress);
-          
-          return {
-            ...property,
-            coordinates
-          };
-        } catch (error) {
-          console.error(`Failed to geocode property ${property.id}:`, error);
-          return {
-            ...property,
-            coordinates: [1.3521, 103.8198] // Default Singapore coordinates
-          };
-        }
-      })
-    );
+    // Only geocode if explicitly requested
+    if (requireCoordinates) {
+      const propertiesWithCoords = await Promise.all(
+        properties.map(async (property: Property) => {
+          try {
+            const fullAddress = `${property.address}, ${property.zip_code}, Singapore`;
+            const coordinates = await geocodeSingaporeAddress(fullAddress);
+            return { ...property, coordinates };
+          } catch (error) {
+            console.error(`Geocoding failed for property ${property.id}`, error);
+            return { ...property, coordinates: DEFAULT_COORDS };
+          }
+        })
+      );
+      return propertiesWithCoords;
+    }
 
-    return propertiesWithCoords;
-   } catch (error) {
-    console.error('Error fetching properties:', error);
+    return properties;
+  } catch (error) {
+    console.error('API Error:', error);
     throw error;
   }
 };
