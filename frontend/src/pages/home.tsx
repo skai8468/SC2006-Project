@@ -2,6 +2,8 @@ import { PROPERTIES } from '@/data/properties';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+// import { fetchProperties } from '@/api/properties';
+import axios from 'axios';
 
 // Select featured properties (3 highest-priced properties)
 const FEATURED_PROPERTIES = PROPERTIES
@@ -9,6 +11,16 @@ const FEATURED_PROPERTIES = PROPERTIES
   .slice(0, 3);
 
 export function HomePage() {
+  const handleTestClick = async () => {
+    try {
+      console.log('Fetching users from Django backend...');
+      const response = await axios.get('http://localhost:8000/account/users/');
+      console.log('Users data:', response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Section */}
@@ -35,6 +47,10 @@ export function HomePage() {
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
+            <Button 
+              onClick={handleTestClick} variant="secondary" className="mt-4">
+              Test API (Check Console)
+          </Button>
           </div>
         </div>
       </section>
