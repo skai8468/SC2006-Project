@@ -1,11 +1,15 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 
+from account.models import User
+
 def validate_non_negative(value):
     if value < 0:
         raise ValidationError("This field must be 0 or greater.")
 
 class Property(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    title = models.CharField(max_length=100, blank=False, null=False, default="Property Listing")
     block = models.CharField(max_length=20, blank=True, null=True)  # e.g., "460 - 530"
     street_name = models.CharField(max_length=100, blank=False, null=False)  # e.g., "Lorong 6 Toa Payoh"
     town = models.CharField(max_length=50, blank=True, null=True)  # e.g., "Toa Payoh"

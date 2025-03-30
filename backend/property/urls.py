@@ -9,4 +9,5 @@ from . import views
 urlpatterns = [
     path('all/', views.PropertyView.as_view(), name='properties_list'),
     path('details/<int:pk>/', views.PropertyDetailView.as_view(), name='property_detail'),
+    path('details/<int:pk>/update/', views.UpdatePropertyView.as_view(), name='update_property'),
 ]
