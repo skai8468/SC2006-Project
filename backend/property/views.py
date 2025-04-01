@@ -26,6 +26,7 @@ class UpdatePropertyView(generics.UpdateAPIView):
     queryset = Property.objects.all()
     serializer_class = UpdatePropertySerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
     
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
