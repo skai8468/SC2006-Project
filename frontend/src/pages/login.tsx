@@ -1,23 +1,60 @@
 import { LogIn } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import axios from 'axios';
 
 export function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login validation
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-    // Simulate successful login
-    console.log('Logging in...', { email, password });
+    setLoading(true);
     setError('');
+
+    try {
+      const response = await axios.post('http://localhost:8000/account/login/', 
+      { username, password },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Login successful:', response.data);
+      const token = response.data.token;
+
+      localStorage.setItem('authToken', token);
+
+      navigate('/');
+
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400) {
+          setError(error.response.data?.message || 'Invalid username or password');
+        } else {
+          setError('Server error. Please try again.');
+        }
+      } else {
+        setError('An unexpected error occurred.');
+      }
+      console.error('Login failed:', error);
+    } finally {
+      setLoading(false);
+    }
+
+    // // Simulate login validation
+    // if (!email || !password) {
+    //   setError('Please fill in all fields');
+    //   return;
+    // }
+    // // Simulate successful login
+    // console.log('Logging in...', { email, password });
+    // setError('');
   };
 
   return (
@@ -38,16 +75,16 @@ export function LoginPage() {
 
           <div className="space-y-4 rounded-md">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Email address
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="username"
+                name="username"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none"
               />
             </div>
