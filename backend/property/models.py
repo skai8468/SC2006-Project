@@ -19,3 +19,25 @@ class Property(models.Model):
     bedrooms = models.IntegerField(default=0, validators=[validate_non_negative])
     bathrooms = models.IntegerField(default=0, validators=[validate_non_negative])
     square_feet = models.IntegerField(default=0, validators=[validate_non_negative])
+
+# property request
+class PropertyRequest(models.Model):
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Request for {self.property.title} by {self.user.username}"
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Property Request'
+        verbose_name_plural = 'Property Requests'
+    def save(self, *args, **kwargs):
+        if self.user == self.property.owner:
+            raise ValidationError("You cannot request your own property.")
+        super().save(*args, **kwargs)
+    def clean(self):
+        if self.user == self.property.owner:
+            raise ValidationError("You cannot request your own property.")
+    def __str__(self):
+        return f"Request for {self.property.title} by {self.user.username}"

@@ -49,3 +49,41 @@ class UpdatePropertyView(generics.UpdateAPIView):
                 status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+# create a new property
+class CreatePropertyView(generics.CreateAPIView):
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            property = serializer.save(owner=request.user)
+            return Response({
+                    "message": "Property created successfully",
+                    "property": serializer.data
+                },
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# request to create a new property
+class CreatePropertyRequestView(generics.CreateAPIView):
+    queryset = PropertyRequest.objects.all()
+    serializer_class = PropertyRequestSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            property_request = serializer.save(user=request.user)
+            return Response({
+                    "message": "Property request created successfully",
+                    "property_request": serializer.data
+                },
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

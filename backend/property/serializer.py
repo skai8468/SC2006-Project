@@ -22,3 +22,9 @@ class UpdatePropertySerializer(serializers.ModelSerializer):
             'bathrooms': {'required': False},
             'square_feet': {'required': False},
         }
+
+# property request serializer
+class PropertyRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PropertyRequest
+        fields = '__all__'
