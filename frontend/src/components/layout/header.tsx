@@ -1,12 +1,39 @@
 import { Home, LogIn, Menu, Plus, Search, X } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { ThemeToggle } from '../ui/theme-toggle';
+import axios from 'axios';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!searchQuery.trim()) return; // Don't search if empty
+
+    setIsSearching(true);
+    
+    try {
+      console.log('Searching for:', searchQuery);
+      const response = await axios.get('http://localhost:8000/app/properties/', {
+        params: { q: searchQuery }
+      });
+      console.log('Search results:', response.data);
+      setSearchResults(response.data);
+      
+      navigate(`/properties?search=${encodeURIComponent(searchQuery)}`);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white dark:border-gray-800 dark:bg-gray-900">
@@ -20,16 +47,24 @@ export function Header() {
           </div>
 
           <div className="hidden md:block">
-            <div className="relative">
+            <form onSubmit={handleSearchSubmit} className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search properties..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus = {handleSearchSubmit}
                 className="h-10 w-[300px] rounded-md border pl-10 pr-4 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                disabled={isSearching}
               />
-            </div>
+
+              {isSearching && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                </div>
+              )}
+            </form>
           </div>
 
           <nav className="hidden md:flex md:items-center md:space-x-6">
@@ -73,7 +108,7 @@ export function Header() {
         {/* Mobile menu */}
         {isMenuOpen && (
           <div className="md:hidden">
-            <div className="space-y-4 px-2 pb-3 pt-2">
+            <form onSubmit={handleSearchSubmit} className="px-2 pb-3 pt-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
@@ -82,8 +117,16 @@ export function Header() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-10 w-full rounded-md border pl-10 pr-4 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                  disabled={isSearching}
                 />
+                
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                  </div>
+                )}
               </div>
+            </form>
               <Link
                 to="/properties"
                 className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -124,9 +167,8 @@ export function Header() {
                 </div>
               </Link>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
     </header>
   );
 }

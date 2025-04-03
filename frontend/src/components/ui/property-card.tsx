@@ -6,11 +6,11 @@ import { PropertyImage } from './property-image';
 interface PropertyCardProps {
   id: number;
   title: string;
-  location: string;
+  address: string;
   price: number;
   bedrooms: number;
   bathrooms: number;
-  sqft: number;
+  square_feet: number;
   type: string;
   image: string;
   isNew?: boolean;
@@ -19,14 +19,14 @@ interface PropertyCardProps {
 export function PropertyCard({
   id,
   title,
-  location,
-  price,
-  bedrooms,
-  bathrooms,
-  sqft,
+  address,
+  price = 0,
+  bedrooms = 0,
+  bathrooms = 0,
+  square_feet: sqft = 0,
   type,
-  image,
-  isNew,
+  image = '/placeholder.jpg',
+  isNew = false,
 }: PropertyCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -99,7 +99,7 @@ export function PropertyCard({
         </div>
 
         <h3 className="mb-1 text-lg font-medium text-gray-900 line-clamp-1 dark:text-white">{title}</h3>
-        <p className="mb-3 text-sm text-gray-600 line-clamp-1 dark:text-gray-300">{location}</p>
+        <p className="mb-3 text-sm text-gray-600 line-clamp-1 dark:text-gray-300">{address}</p>
 
         <div className="flex items-center divide-x divide-gray-200 border-t pt-3 text-sm text-gray-600 dark:divide-gray-700 dark:border-gray-700 dark:text-gray-300">
           <div className="flex items-center pr-3">
