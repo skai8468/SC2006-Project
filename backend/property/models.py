@@ -8,7 +8,7 @@ def validate_non_negative(value):
         raise ValidationError("This field must be 0 or greater.")
 
 class Property(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='properties_owned', default=None)
     title = models.CharField(max_length=100, blank=False, null=False, default="Property Listing")
     block = models.CharField(max_length=20, blank=True, null=True)  # e.g., "460 - 530"
     street_name = models.CharField(max_length=100, blank=False, null=False)  # e.g., "Lorong 6 Toa Payoh"
