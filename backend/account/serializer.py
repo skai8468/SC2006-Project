@@ -20,3 +20,6 @@ class RegisterUserSerializer(serializers.ModelSerializer):
             name=validated_data['name']
         )
         return user
+
+class LogoutSerializer(serializers.Serializer):
+    pass
