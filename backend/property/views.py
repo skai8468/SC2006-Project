@@ -65,7 +65,10 @@ class PropertyDetailView(generics.RetrieveAPIView):
     serializer_class = PropertySerializer
     
     def get_queryset(self):
-        return Property.objects.filter(id=self.kwargs['pk'])
+        if getattr(self, 'swagger_fake_view', False):
+            return Property.objects.none()
+        pk = self.kwargs.get('pk')
+        return Property.objects.filter(id=pk)
     
 # update a property
 class UpdatePropertyView(generics.UpdateAPIView):

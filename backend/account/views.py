@@ -92,6 +92,8 @@ class LoginUserView(generics.GenericAPIView):
     
 # logout a user
 class LogoutUserView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
+    
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     
