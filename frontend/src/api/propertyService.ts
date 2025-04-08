@@ -3,7 +3,7 @@ import { Property } from '@/types/property';
 import { geocodeSingaporeAddress } from '../components/utility/geocode.ts';
 
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/app';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const DEFAULT_COORDS: [number, number] = [1.3521, 103.8198]; // Singapore coordinates
 interface FetchPropertiesParams {
   search?: string;
@@ -16,26 +16,12 @@ interface FetchPropertiesParams {
   requireCoordinates?: boolean;
 }
 
-// export const fetchProperties = async (params: any = {}) => {
-//   console.log('Making request to:', `${API_BASE_URL}/properties/`);
-//   console.log('With params:', params);
-  
-//   try {
-//     const response = await axios.get(`${API_BASE_URL}/properties/`, { params });
-//     console.log('Full API response:', response);
-//     return response.data;
-//   } catch (error) {
-//     console.error('API Error:', error.response?.data || error.message);
-//     throw error;
-//   }
-// };
-
 export const fetchPropertiesWithGeocode = async (params: FetchPropertiesParams = {}) => {
   try {
     // Destructure the params to separate the requireCoordinates flag
     const { requireCoordinates = false, ...apiParams } = params;
     
-    const response = await axios.get(`${API_BASE_URL}/properties/`, { 
+    const response = await axios.get(`${API_BASE_URL}/property/all/`, { 
       params: apiParams  // Pass all other params to the API
     });
     const properties = response.data;
