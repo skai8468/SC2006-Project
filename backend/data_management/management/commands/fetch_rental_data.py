@@ -2,24 +2,42 @@ from django.core.management.base import BaseCommand
 from data_management.models import RentalFlat
 import requests
 from datetime import datetime
+import os
+import csv
+from django.conf import settings
 
 class Command(BaseCommand):
-    help = 'Fetches rental flat data from Data.gov.sg API'
+    help = 'Fetches rental flat data from Data.gov.sg CSV file'
 
     def handle(self, *args, **options):
         dataset_id = "d_c9f57187485a850908655db0e8cfe651"
-        url = f"https://data.gov.sg/api/action/datastore_search?resource_id={dataset_id}"
+
+        initiate_download_response = s.get(
+            f"https://api-open.data.gov.sg/v1/public/api/datasets/{DATASET_ID}/initiate-download",
+            headers={"Content-Type":"application/json"},
+            json={}
+        )
+        
+        csv_url = f"https://api-open.data.gov.sg/v1/public/api/datasets/{dataset_id}/initiate-download"
+        # csv_url = "https://data.gov.sg/dataset//download/rental_flats.csv"
+        
+        csv_dir = os.path.join(settings.BASE_DIR, 'data_management', 'csv')
+        os.makedirs(csv_dir, exist_ok=True)
+        csv_path = os.path.join(csv_dir, 'rental_flats.csv')
         
         try:
-            response = requests.get(url)
+            self.stdout.write('Downloading CSV file...')
+            response = requests.get(csv_url)
             response.raise_for_status()
-            data = response.json()
             
-            if data.get('success'):
-                records = data.get('result', {}).get('records', [])
-                created_count = 0
-                
-                for record in records:
+            with open(csv_path, 'wb') as f:
+                f.write(response.content)
+            self.stdout.write(f'CSV file saved to {csv_path}')
+            
+            created_count = 0
+            with open(csv_path, 'r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for record in reader:
                     RentalFlat.objects.update_or_create(
                         rent_approval_date=record.get('rent_approval_date'),
                         block=record.get('block'),
@@ -31,16 +49,17 @@ class Command(BaseCommand):
                         }
                     )
                     created_count += 1
-                
-                self.stdout.write(
-                    self.style.SUCCESS(f'Successfully processed {created_count} records')
-                )
-            else:
-                self.stdout.write(
-                    self.style.ERROR('API request was not successful')
-                )
-                
+                    
+                    if created_count % 1000 == 0:
+                        self.stdout.write(f'Processed {created_count} records...')
+            
+            self.stdout.write(
+                self.style.SUCCESS(f'Successfully processed {created_count} records from CSV')
+            )
+            
         except Exception as e:
             self.stdout.write(
-                self.style.ERROR(f'Error fetching data: {str(e)}')
+                self.style.ERROR(f'Error processing data: {str(e)}')
             )
+            if os.path.exists(csv_path):
+                os.remove(csv_path)

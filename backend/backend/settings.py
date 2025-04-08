@@ -91,8 +91,6 @@ DATABASES = {
     },
 }
 
-AUTH_USER_MODEL = 'app.User'
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -140,6 +138,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5175",
+    "http://localhost:5173",
 ]
 
 # Authentication
@@ -150,8 +149,12 @@ AUTHENTICATION_BACKENDS = [
 AUTH_USER_MODEL = 'account.User'
 
 # OneMap API settings
-ONEMAP_API_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlNzk3YzFmMThkODAwMWM2NjAzYjIwN2I5YmEzNjExYSIsImlzcyI6Imh0dHA6Ly9pbnRlcm5hbC1hbGItb20tcHJkZXppdC1pdC1uZXctMTYzMzc5OTU0Mi5hcC1zb3V0aGVhc3QtMS5lbGIuYW1hem9uYXdzLmNvbS9hcGkvdjIvdXNlci9wYXNzd29yZCIsImlhdCI6MTc0NDAyMTQ4OSwiZXhwIjoxNzQ0MjgwNjg5LCJuYmYiOjE3NDQwMjE0ODksImp0aSI6InZMZFh0MGV0a0NNN1d3SXYiLCJ1c2VyX2lkIjo2NzQxLCJmb3JldmVyIjpmYWxzZX0.LOtHFfmbDaslpqbN4k8dgDT4iD0msKwYBjxRzwTeGuc'
-ONEMAP_API_URL = 'https://www.onemap.gov.sg/api/common/elastic/search'
+# ONEMAP_API_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlNzk3YzFmMThkODAwMWM2NjAzYjIwN2I5YmEzNjExYSIsImlzcyI6Imh0dHA6Ly9pbnRlcm5hbC1hbGItb20tcHJkZXppdC1pdC1uZXctMTYzMzc5OTU0Mi5hcC1zb3V0aGVhc3QtMS5lbGIuYW1hem9uYXdzLmNvbS9hcGkvdjIvdXNlci9wYXNzd29yZCIsImlhdCI6MTc0NDAyMTQ4OSwiZXhwIjoxNzQ0MjgwNjg5LCJuYmYiOjE3NDQwMjE0ODksImp0aSI6InZMZFh0MGV0a0NNN1d3SXYiLCJ1c2VyX2lkIjo2NzQxLCJmb3JldmVyIjpmYWxzZX0.LOtHFfmbDaslpqbN4k8dgDT4iD0msKwYBjxRzwTeGuc'
+# ONEMAP_API_URL = 'https://www.onemap.gov.sg/api/common/elastic/search'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # REST_FRAMEWORK = {
 #     'DEFAULT_AUTHENTICATION_CLASSES': (

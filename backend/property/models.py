@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.db.models import JSONField 
 
 from account.models import User
 
@@ -19,6 +20,45 @@ class Property(models.Model):
     bedrooms = models.IntegerField(default=0, validators=[validate_non_negative])
     bathrooms = models.IntegerField(default=0, validators=[validate_non_negative])
     square_feet = models.IntegerField(default=0, validators=[validate_non_negative])
+    property_type = models.CharField(max_length=50, choices=[
+        ('HDB', 'HDB'),
+        ('Condo', 'Condo'),
+        ('Landed', 'Landed'),
+        ('Studio', 'Studio'),
+    ], default='HDB')
+    amenities = models.JSONField(default=dict)
+    description = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='property_images/', blank=True, null=True)
+    video_url = models.URLField(blank=True, null=True)
+
+
+
+    def set_default_amenities(self):
+        return {
+            'wifi': False,
+            'aircon': False,
+            'parking': False,
+            'swimming_pool': False,
+            'gym': False,
+            'balcony': False,
+            'security': False,
+            'garden': False,
+            'smart_home': False,
+            'pet_friendly': False,
+            'washing_machine': False,
+            'dryer': False,
+            'kitchen': False,
+        }
+
+    def save(self, *args, **kwargs):
+        if not self.amenities:
+            self.amenities = self.set_default_amenities()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        if self.video_url:
+            return f"Video for {self.property.title}"
+        return f"Image for {self.property.title}"
 
 # property request
 class PropertyRequest(models.Model):
