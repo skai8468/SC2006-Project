@@ -2,14 +2,18 @@ from django.shortcuts import render
 from rest_framework import viewsets, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework import permissions, status
+from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
 
 from .models import *
 from .serializer import *
+
+from property.models import Property
+from property.serializer import PropertySerializer
 
 # view all users
 class UsersListView(generics.ListAPIView):
@@ -49,7 +53,7 @@ class RegisterUserView(generics.CreateAPIView):
 class UpdateUserView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     
     def get_object(self):
@@ -63,7 +67,7 @@ class UpdateUserView(generics.UpdateAPIView):
 class DeleteUserView(generics.DestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     
     def get_object(self):
@@ -88,10 +92,20 @@ class LoginUserView(generics.GenericAPIView):
     
 # logout a user
 class LogoutUserView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = LogoutSerializer
+    
+    permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     
     def post(self, request):
         request.user.auth_token.delete()
         return Response({"message": "Logout successful"}, status=200)
     
+# view all properties of a user
+class UserPropertiesView(generics.ListAPIView):
+    serializer_class = PropertySerializer
+    
+    def get_queryset(self):
+        username = self.kwargs.get('username')
+        user = get_object_or_404(User, username=username)
+        return Property.objects.filter(owner=user)
