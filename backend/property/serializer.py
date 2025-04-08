@@ -28,3 +28,8 @@ class PropertyRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = PropertyRequest
         fields = '__all__'
+
+class PropertyImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PropertyImage
+        fields = ['id', 'image']

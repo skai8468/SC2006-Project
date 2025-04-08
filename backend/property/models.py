@@ -9,6 +9,21 @@ def validate_non_negative(value):
         raise ValidationError("This field must be 0 or greater.")
 
 class Property(models.Model):
+    PROPERTY_TYPES = [
+        ('HDB', 'HDB'),
+        ('Condo', 'Condo'),
+        ('Landed', 'Landed'),
+        # ('Apartment', 'Apartment'),
+        # ('Penthouse', 'Penthouse'),
+        ('Studio', 'Studio'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('available', 'Available'),
+        ('rented', 'Rented'),
+        ('sold', 'Sold'),
+    ]
+
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='properties_owned', default=None)
     title = models.CharField(max_length=100, blank=False, null=False, default="Property Listing")
     block = models.CharField(max_length=20, blank=True, null=True)  # e.g., "460 - 530"
@@ -20,17 +35,14 @@ class Property(models.Model):
     bedrooms = models.IntegerField(default=0, validators=[validate_non_negative])
     bathrooms = models.IntegerField(default=0, validators=[validate_non_negative])
     square_feet = models.IntegerField(default=0, validators=[validate_non_negative])
-    property_type = models.CharField(max_length=50, choices=[
-        ('HDB', 'HDB'),
-        ('Condo', 'Condo'),
-        ('Landed', 'Landed'),
-        ('Studio', 'Studio'),
-    ], default='HDB')
+    property_type = models.CharField(max_length=20, choices=PROPERTY_TYPES, default='HDB')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     amenities = models.JSONField(default=dict)
     description = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to='property_images/', blank=True, null=True)
-    video_url = models.URLField(blank=True, null=True)
-
+    # image = models.ImageField(upload_to='property_images/', blank=True, null=True)
+    # video_url = models.URLField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
     def set_default_amenities(self):
@@ -59,6 +71,12 @@ class Property(models.Model):
         if self.video_url:
             return f"Video for {self.property.title}"
         return f"Image for {self.property.title}"
+    
+
+class PropertyImage(models.Model):
+    property = models.ForeignKey(Property, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='property_images/')
+    created_at = models.DateTimeField(auto_now_add=True)
 
 # property request
 class PropertyRequest(models.Model):

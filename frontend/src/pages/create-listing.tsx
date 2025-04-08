@@ -1,21 +1,26 @@
 import { Building2, ImagePlus, MapPin, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect  } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ProgressSteps } from '../components/ui/progress-steps';
+import axios from "axios";
+import { create } from 'node_modules/axios/index.d.cts';
 
 interface ListingFormData {
   title: string;
   description: string;
   price: number;
   location: string;
+  zip_code: string;
+  road_name: string;
+  block: string;
   coordinates: [number, number];
   type: string;
   size: number;
   bedrooms: number;
   bathrooms: number;
   amenities: string[];
-  images: string[];
+  images: File[];
   videoUrl?: string;
   status: 'available' | 'rented' | 'sold';
 }
@@ -52,12 +57,19 @@ const STEPS = [
 
 export function CreateListingPage() {
   const navigate = useNavigate();
+  // const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
+  const [postalCode, setPostalCode] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [formData, setFormData] = useState<ListingFormData>({
     title: '',
     description: '',
     price: 0,
     location: '',
+    zip_code: '',
+    block: '',
+    road_name: '',
     coordinates: [1.3521, 103.8198], // Default to Singapore coordinates
     type: '',
     size: 0,
@@ -70,8 +82,42 @@ export function CreateListingPage() {
 
   const [errors, setErrors] = useState<Partial<Record<keyof ListingFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // New state for image previews
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('authToken');
+      console.log('Token:', token);
+      if (!token) {
+        console.error('No Token');
+        navigate('/login', { state: { from: location.pathname } });
+        return;
+      }
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/property/api/auth/verify/', { // change 
+          headers: {
+            'Authorization': `Token ${token}`
+          }
+        });
+
+        if (response.ok) {
+          setIsAuthenticated(true);
+        } else {
+          localStorage.removeItem('authToken');
+          navigate('/login', { state: { from: location.pathname } });
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        navigate('/login');
+      } finally {
+        setIsLoadingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, [navigate, location]);
+  
   const validateStep = (step: number) => {
     const newErrors: Partial<Record<keyof ListingFormData, string>> = {};
 
@@ -134,12 +180,93 @@ export function CreateListingPage() {
 
     setIsSubmitting(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      // console.log('Processing zip code');
+      // console.log('Address:', formData.location);
+      const url = `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${formData.location}&returnGeom=Y&getAddrDetails=Y&pageNum=1`;
+      // const url = `https://developers.onemap.sg/commonapi/search?searchVal=${encodeURIComponent(formData.location)}&returnGeom=Y&getAddrDetails=Y`;
+
+      try {
+        const response = await axios.get(url);
+        const data = response.data;
+        if (data.results && data.results.length > 0) {
+          const zip_code = data.results[0].POSTAL; // Return postal code
+          const block = data.results[0].BLOCK; // Return block number
+          const road_name = data.results[0].ROAD_NAME; // Return road name
+          formData.zip_code = zip_code; // Assign the postal code to formData
+          formData.block = block;
+          formData.road_name = road_name;
+          // console.log('zip:', formData.zip_code);
+        }
+      } catch (error) {
+        console.error("Error fetching postal code:", error);
+      }
+
+      // console.log('Form Data:', formData);
+      // console.log('zip:', formData.zip_code);
       console.log('Submitting listing:', formData);
+
+      const propertyData = {
+        title: formData.title,
+        street_name: formData.road_name,
+        town: 'Singapore',
+        city: 'Singapore',
+        zip_code: formData.zip_code,
+        description: formData.description,
+        block: formData.block,
+        price: formData.price,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        square_feet: formData.size,
+        property_type: formData.type,
+        amenities: formData.amenities.join(', '),
+        status: formData.status,
+        // description: formData.description,
+      };
+
+      // console.log('propertyData:', propertyData);
+      const response = await fetch('http://127.0.0.1:8000/property/create/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`
+        },
+        body: JSON.stringify(propertyData)
+      });
+  
+      const property = await response.json();
+      
+      if (formData.images.length > 0) {
+        const formDataImages = new FormData();
+        formData.images.forEach((file) => {
+          formDataImages.append('images', file);
+        });
+
+        // console.log("Owner ID: ", property.property.owner);
+        const imagesResponse = await fetch(`http://127.0.0.1:8000/property/details/${property.property.owner}/images/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${token}`
+          },
+          body: formDataImages
+        });
+
+        if (!imagesResponse.ok) {
+          throw new Error('Property created but failed to upload images');
+        }
+      }
+
       navigate('/my-listings');
     } catch (error) {
-      console.error('Error creating listing:', error);
-      setErrors({ submit: 'Failed to create listing. Please try again.' });
+      console.error('Error:', error);
+      console.error('hii:');
+      setErrors({
+        submit: error instanceof Error ? error.message : 'Failed to create listing'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -153,14 +280,41 @@ export function CreateListingPage() {
         return;
       }
 
-      const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
-      setFormData((prev) => ({
+      const newFiles = Array.from(files);
+      setFormData(prev => ({
         ...prev,
-        images: [...prev.images, ...newImages],
+        images: [...prev.images, ...newFiles]
       }));
-      setErrors((prev) => ({ ...prev, images: undefined }));
+
+      const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+      setImagePreviews(prev => [...prev, ...newPreviews]);
+      
+      setErrors(prev => ({ ...prev, images: undefined }));
     }
   };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    URL.revokeObjectURL(imagePreviews[index]);
+  };
+
+  if (isLoadingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p>Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Redirect will happen in useEffect
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -328,11 +482,26 @@ export function CreateListingPage() {
                           if (errors.location) validateStep(2);
                         }}
                         className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                        placeholder="Enter address or area"
+                        // placeholder="e.g. 123 Block 45 Orchard Road, #12-34"
+                        placeholder="e.g. 123 Block 45 Orchard Road"
                       />
                     </div>
                     {errors.location && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.location}</p>}
                   </div>
+
+                  {/* <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Postal Code</label>
+                      <input
+                        id="zip_code"
+                        name="zip_code"
+                        type="text"
+                        required
+                        value={formData.zip_code}
+                        onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
+                        placeholder="e.g. 123456"
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                      />
+                  </div> */}
 
                   <div className="grid gap-6 md:grid-cols-2">
                     <div>
@@ -435,7 +604,7 @@ export function CreateListingPage() {
                       </p>
                     </div>
 
-                    {formData.images.length > 0 && (
+                    {/* {formData.images.length > 0 && (
                       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                         {formData.images.map((image, index) => (
                           <div key={index} className="relative aspect-square">
@@ -452,6 +621,26 @@ export function CreateListingPage() {
                                   images: prev.images.filter((_, i) => i !== index),
                                 }))
                               }
+                              className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                            >
+                              <Upload className="h-4 w-4 rotate-45" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )} */}
+                    {imagePreviews.length > 0 && (
+                      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative aspect-square">
+                            <img
+                              src={preview}
+                              alt={`Property preview ${index + 1}`}
+                              className="h-full w-full rounded-lg object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
                               className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
                             >
                               <Upload className="h-4 w-4 rotate-45" />

@@ -6,10 +6,40 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
 from .models import *
 from .serializer import *
 
+class TokenVerifyView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure that only authenticated users can access this view
+
+    def get(self, request):
+        return Response({"message": "Token is valid."}, status=status.HTTP_200_OK)
+    
+
+class PropertyImageUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, property_id):
+        try:
+            property = Property.objects.get(id=property_id)
+
+            # Check if the user is the owner of the property
+            if property.owner != request.user:
+                return Response({'message': 'You do not have permission to upload images for this property'},
+                                status=status.HTTP_403_FORBIDDEN)
+
+            # Handle multiple image uploads
+            images = request.FILES.getlist('images')
+            for image in images:
+                PropertyImage.objects.create(property=property, image=image)
+
+            return Response({'message': 'Images uploaded successfully'}, status=status.HTTP_201_CREATED)
+        
+        except Property.DoesNotExist:
+            return Response({'message': 'Property not found'}, status=status.HTTP_404_NOT_FOUND)
+    
 class PropertyView(generics.ListAPIView):
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
@@ -107,16 +137,20 @@ class CreatePropertyView(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
     
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
             property = serializer.save(owner=request.user)
             return Response({
-                    "message": "Property created successfully",
-                    "property": serializer.data
-                },
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                "message": "Property created successfully",
+                "property": serializer.data,
+                "id": property.id  # Ensure ID is returned for image upload
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({
+                "message": str(e),
+                "errors": serializer.errors if hasattr(serializer, 'errors') else None
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 # request to create a new property
 class CreatePropertyRequestView(generics.CreateAPIView):
