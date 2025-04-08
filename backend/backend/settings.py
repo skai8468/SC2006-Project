@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'drf_yasg',
+    'data_management',
+    'advanced_features'
 ]
 
 MIDDLEWARE = [
@@ -146,6 +148,10 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 AUTH_USER_MODEL = 'account.User'
+
+# OneMap API settings
+ONEMAP_API_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlNzk3YzFmMThkODAwMWM2NjAzYjIwN2I5YmEzNjExYSIsImlzcyI6Imh0dHA6Ly9pbnRlcm5hbC1hbGItb20tcHJkZXppdC1pdC1uZXctMTYzMzc5OTU0Mi5hcC1zb3V0aGVhc3QtMS5lbGIuYW1hem9uYXdzLmNvbS9hcGkvdjIvdXNlci9wYXNzd29yZCIsImlhdCI6MTc0NDAyMTQ4OSwiZXhwIjoxNzQ0MjgwNjg5LCJuYmYiOjE3NDQwMjE0ODksImp0aSI6InZMZFh0MGV0a0NNN1d3SXYiLCJ1c2VyX2lkIjo2NzQxLCJmb3JldmVyIjpmYWxzZX0.LOtHFfmbDaslpqbN4k8dgDT4iD0msKwYBjxRzwTeGuc'
+ONEMAP_API_URL = 'https://www.onemap.gov.sg/api/common/elastic/search'
 
 # REST_FRAMEWORK = {
 #     'DEFAULT_AUTHENTICATION_CLASSES': (
