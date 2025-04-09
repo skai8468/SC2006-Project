@@ -14,6 +14,8 @@ interface ListingFormData {
   zip_code: string;
   road_name: string;
   block: string;
+  longitude: number;
+  latitude: number;
   coordinates: [number, number];
   type: string;
   size: number;
@@ -70,6 +72,8 @@ export function CreateListingPage() {
     zip_code: '',
     block: '',
     road_name: '',
+    longitude: 0,
+    latitude: 0,
     coordinates: [1.3521, 103.8198], // Default to Singapore coordinates
     type: '',
     size: 0,
@@ -195,12 +199,16 @@ export function CreateListingPage() {
         const data = response.data;
         if (data.results && data.results.length > 0) {
           const zip_code = data.results[0].POSTAL; // Return postal code
-          const block = data.results[0].BLOCK; // Return block number
+          const block = data.results[0].BLK_NO; // Return block number
           const road_name = data.results[0].ROAD_NAME; // Return road name
+          const longitude = data.results[0].LONGITUDE; // Return longitude
+          const latitude = data.results[0].LATITUDE; // Return latitude
           formData.zip_code = zip_code; // Assign the postal code to formData
           formData.block = block;
           formData.road_name = road_name;
-          // console.log('zip:', formData.zip_code);
+          formData.longitude = longitude;
+          formData.latitude = latitude;
+          // console.log('block:', formData.block);
         }
       } catch (error) {
         console.error("Error fetching postal code:", error);
@@ -215,6 +223,9 @@ export function CreateListingPage() {
         street_name: formData.road_name,
         town: 'Singapore',
         city: 'Singapore',
+        location: `${formData.block} ${formData.road_name}`,
+        longitude: formData.longitude,
+        latitude: formData.latitude,
         zip_code: formData.zip_code,
         description: formData.description,
         block: formData.block,
@@ -225,7 +236,6 @@ export function CreateListingPage() {
         property_type: formData.type,
         amenities: formData.amenities.join(', '),
         status: formData.status,
-        // description: formData.description,
       };
 
       // console.log('propertyData:', propertyData);

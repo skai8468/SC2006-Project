@@ -45,6 +45,11 @@ export function PropertyMap({ properties, selectedProperty, onPropertySelect }: 
   // Validate coordinates and filter properties
   useEffect(() => {
     const validProps = properties.filter(property => {
+      if (!property.coordinates || property.coordinates.length !== 2) {
+        console.warn(`Invalid coordinates for property ${property.id}:`, property.coordinates);
+        return false; 
+      }
+
       const [lat, lng] = property.coordinates;
       const isValid = 
         typeof lat === 'number' && 

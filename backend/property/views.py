@@ -45,6 +45,7 @@ class PropertyView(generics.ListAPIView):
     serializer_class = PropertySerializer
     
     def get_queryset(self):
+        print("Fetching properties...")
         return super().get_queryset().order_by('-created_at')
 
 # view a single property using the property id

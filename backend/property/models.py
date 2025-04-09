@@ -28,6 +28,7 @@ class Property(models.Model):
     title = models.CharField(max_length=100, blank=False, null=False, default="Property Listing")
     block = models.CharField(max_length=20, blank=True, null=True)  # e.g., "460 - 530"
     street_name = models.CharField(max_length=100, blank=False, null=False)  # e.g., "Lorong 6 Toa Payoh"
+    location = models.CharField(max_length=100, blank=False, null=False)  # e.g., "460 Lorong 6 Toa Payoh"
     town = models.CharField(max_length=50, blank=True, null=True)  # e.g., "Toa Payoh"
     city = models.CharField(max_length=50, default="Singapore", blank=False, null=False)  # Default to Singapore
     zip_code = models.CharField(max_length=10, blank=True, null=True)
@@ -39,6 +40,8 @@ class Property(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     amenities = models.JSONField(default=dict)
     description = models.TextField(blank=True, null=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     # image = models.ImageField(upload_to='property_images/', blank=True, null=True)
     # video_url = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
