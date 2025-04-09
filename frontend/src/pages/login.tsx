@@ -76,7 +76,7 @@ export function LoginPage() {
           <div className="space-y-4 rounded-md">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Email address
+                Username
               </label>
               <input
                 id="username"
