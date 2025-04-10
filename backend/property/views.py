@@ -52,7 +52,8 @@ class PropertyView(generics.ListAPIView):
 # view a single property using the property id
 class PropertyDetailView(generics.RetrieveAPIView):
     serializer_class = PropertySerializer
-    permission_classes = [AllowAny]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated] or [AllowAny]
     
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
