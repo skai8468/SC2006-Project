@@ -102,7 +102,8 @@ class CreatePropertyView(generics.CreateAPIView):
             return Response({
                 "message": "Property created successfully",
                 "property": serializer.data,
-                "id": property.id  # Ensure ID is returned for image upload
+                "id": property.id,
+                # "location": property.location,
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({

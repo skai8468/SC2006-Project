@@ -100,12 +100,12 @@ export function PropertiesPage() {
     title: property.title,
     price: property.price,
     location: property.location,
-    coordinates: [parseFloat(property.latitude), parseFloat(property.longitude)],
+    coordinates: [(property.latitude), (property.longitude)],
     image: property.image,
   }));
 
   // console.log('All properties:', properties);
-  console.log('Filtered properties:', filteredProperties);
+  // console.log('Filtered properties:', filteredProperties);
 
   return (
     <div className="container mx-auto flex h-[calc(100vh-4rem)] gap-4 p-4">

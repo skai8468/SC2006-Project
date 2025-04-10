@@ -23,7 +23,7 @@ export function Header() {
     
     try {
       console.log('Searching for:', searchQuery);
-      const response = await axios.get('http://localhost:8000/app/properties/', {
+      const response = await axios.get('http://127.0.0.1:8000/app/properties/', {
         params: { q: searchQuery }
       });
       console.log('Search results:', response.data);
@@ -90,7 +90,7 @@ export function Header() {
             <ThemeToggle />
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <Link to="/profile">
+                <Link to="/my-listings">
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                     <User className="h-4 w-4" />
                   </Button>
@@ -179,10 +179,9 @@ export function Header() {
                       <span>Add Listing</span>
                     </div>
                   </Link>
-                  <Link to="/profile" className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800">
+                  <Link to="/my-listings" className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800">
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4" />
-                      <span>Profile</span>
                     </div>
                   </Link>
                   <button
