@@ -63,11 +63,12 @@ class UserPropertiesView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        username = self.request.query_params.get('owner', None)
+        owner_id = self.request.query_params.get('owner_id', None)
         queryset = Property.objects.all().order_by('-created_at')
-
-        if username is not None:
-            queryset = queryset.filter(owner__username=username)
+        print("Fetching properties for user...")
+        if owner_id:
+            queryset = queryset.filter(owner_id=owner_id)
+            print("Fetching properties for owner_id:", owner_id)
         return queryset
     
 # update a property

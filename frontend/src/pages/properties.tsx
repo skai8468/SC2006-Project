@@ -100,7 +100,7 @@ export function PropertiesPage() {
     title: property.title,
     price: property.price,
     location: property.location,
-    coordinates: [(property.latitude), (property.longitude)],
+    coordinates: [property.latitude, property.longitude],
     image: property.image,
   }));
 

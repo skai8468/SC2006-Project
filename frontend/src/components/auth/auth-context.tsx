@@ -11,17 +11,17 @@ interface User {
 interface AuthContextType {
   user : User | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (token: string, userData: User) => void;
   logout: () => void;
 }
 
 // const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AuthContext = createContext<AuthContextType | undefined>({
+const AuthContext = createContext<AuthContextType>({
   user: null,
+  isAuthenticated: false,
   login: () => {},
   logout: () => {},
-  isAuthenticated: false,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -65,8 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+
+  // console.log('AuthProvider:', { user, isAuthenticated });
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, user : null }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, user }}>
       {children}
     </AuthContext.Provider>
   );
@@ -74,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../components/auth/auth-context';
 import axios from 'axios';
+import { c } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -35,7 +36,7 @@ export function LoginPage() {
         },
       });
 
-      // console.log('Login successful:', response.data);
+      // console.log('Login successful:', userResponse.data);
       const user = userResponse.data;
       login(token, user);
       // localStorage.setItem('authToken', token);

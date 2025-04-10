@@ -5,10 +5,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { createContext, useContext } from 'react';
 import { useAuth } from '../components/auth/auth-context';
+import { c } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
 
 
 interface Listing {
   id: number;
+  owner: number;
   title: string;
   status: string;
   views: number;
@@ -47,23 +49,35 @@ export function MyListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const { user } = useAuth();
 
+  // console.log('User:', user); // Check if user is being fetched correctly
   useEffect(() => {
     const fetchListings = async () => {
         try {
-            const apiUrl = `http://localhost:8000/property/all/?owner=${user?.username}`;
-
+            // console.log(user.id);
+            const apiUrl = `http://localhost:8000/property/all/?owner=${user?.id}`;
             const response = await axios.get(apiUrl, {
                 withCredentials: true,
             });
-            setListings(response.data);
+            // for (const listing of response.data) {
+            //   if (listing.owner == user.id) {
+            //     console.log('Listing:', listing.owner);
+            //   }
+            // }
+
+            const filteredListings = user?.id ? response.data.filter((listing: Listing) => listing.owner === user.id) : [];
+            setListings(filteredListings);
+
+            // setListings(filteredListings);
+            // setListings(response.data);
+            // console.log('Fetched listings:', response.data);
         } catch (error) {
             console.error('Error fetching listings:', error);
         }
     };
-
       fetchListings();
   }, [user]);
   
+  // console.log('User ID:', user?.id); // Check if user ID is being fetched correctly
   // useEffect(() => {
   //     const fetchListings = async () => {
   //         try {
