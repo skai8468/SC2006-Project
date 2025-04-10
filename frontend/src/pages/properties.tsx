@@ -14,7 +14,7 @@ export function PropertiesPage() {
   const [showMap, setShowMap] = useState(true);
   const [activeFilters, setActiveFilters] = useState<FilterValues>({
     propertyTypes: [],
-    priceRange: [0, 10000],
+    priceRange: [0, 100000000],
     bedrooms: 0,
     bathrooms: 0,
     amenities: [],
@@ -44,12 +44,15 @@ export function PropertiesPage() {
 
   // Apply filters to properties
   const filteredProperties = properties.filter((property) => {
+    console.log(`Checking property ${property.id}:`, property);
     
     // Search query
     if (
       searchQuery &&
-      !property.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !property.location.toLowerCase().includes(searchQuery.toLowerCase())
+      !(
+        property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        property.location.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     ) {
       return false;
     }
@@ -100,6 +103,9 @@ export function PropertiesPage() {
     coordinates: [parseFloat(property.latitude), parseFloat(property.longitude)],
     image: property.image,
   }));
+
+  // console.log('All properties:', properties);
+  console.log('Filtered properties:', filteredProperties);
 
   return (
     <div className="container mx-auto flex h-[calc(100vh-4rem)] gap-4 p-4">
