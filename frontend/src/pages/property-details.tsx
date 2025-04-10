@@ -1,4 +1,3 @@
-import { PROPERTIES } from '@/data/properties';
 import {
   Bath,
   Bed,
@@ -12,10 +11,36 @@ import {
   Share2,
   Square,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { PropertyImage } from '../components/ui/property-image';
+import axios from 'axios';
+
+interface Property {
+  id: number;
+  title: string;
+  block: string;
+  description: string;
+  town: string;
+  city: string;
+  price: string;
+  street_name: string;
+  location: string; 
+  property_type: string;
+  bedrooms: number;
+  bathrooms: number;
+  square_feet: number;
+  amenities: string;
+  images?: string[];
+  status: string;
+  created_at: string;
+  updated_at: string;
+  owner: number;
+  latitude: string;
+  longitude: string;
+  zip_code: string;
+}
 
 export function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,18 +48,60 @@ export function PropertyDetailsPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [showContactForm, setShowContactForm] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [amenities, setAmenities] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Find the property based on the ID from the URL
-  const property = PROPERTIES.find((p) => p.id === Number(id));
+  useEffect(() => {
+    const fetchProperty = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8000/property/details/${id}/`
+        );
+        
+        const propertyData = response.data;
+        setProperty(propertyData);
+        console.log('Fetched property:', response.data);
+        setImages(propertyData.images || []);
 
-  // If property not found, show error state
-  if (!property) {
+        if (typeof propertyData.amenities === 'string') {
+          setAmenities(propertyData.amenities.split(',').map((a: string) => a.trim()));
+        } else if (Array.isArray(propertyData.amenities)) {
+          setAmenities(propertyData.amenities);
+        } else {
+          setAmenities([]);
+        }
+      } catch (err) {
+        setError('Failed to fetch property details');
+        console.error('Error fetching property:', err);
+
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchProperty();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <p>Loading property details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !property) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="rounded-lg border bg-white p-8 text-center">
           <h1 className="mb-4 text-2xl font-bold text-gray-900">Property Not Found</h1>
           <p className="mb-6 text-gray-600">
-            Sorry, we couldn't find the property you're looking for.
+            {error || 'Sorry, we couldn\'t find the property you\'re looking for.'}
           </p>
           <Button onClick={() => navigate('/properties')}>Back to Properties</Button>
         </div>
@@ -42,38 +109,43 @@ export function PropertyDetailsPage() {
     );
   }
 
-  // Generate multiple images using the same image for demo purposes
-  const propertyImages = [property.image, property.image, property.image];
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="mb-8 overflow-hidden rounded-lg">
-            <PropertyImage
-              src={propertyImages[selectedImage]}
-              alt={property.title}
-              aspectRatio="16/9"
-              className="h-[400px]"
-            />
-            <div className="mt-4 flex gap-4">
-              {propertyImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`overflow-hidden rounded-lg ${
-                    selectedImage === index ? 'ring-2 ring-blue-500' : ''
-                  }`}
-                >
-                  <PropertyImage
-                    src={image}
-                    alt={`View ${index + 1}`}
-                    aspectRatio="square"
-                    className="h-20 w-20"
-                  />
-                </button>
-              ))}
-            </div>
+            {images.length > 0 ? (
+              <>
+                <PropertyImage
+                  src={images[selectedImage]}
+                  alt={property.title}
+                  aspectRatio="16/9"
+                  className="h-[400px]"
+                />
+                <div className="mt-4 flex gap-4">
+                  {images.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(index)}
+                      className={`overflow-hidden rounded-lg ${
+                        selectedImage === index ? 'ring-2 ring-blue-500' : ''
+                      }`}
+                    >
+                      <PropertyImage
+                        src={image}
+                        alt={`View ${index + 1}`}
+                        aspectRatio="square"
+                        className="h-20 w-20"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex h-[400px] items-center justify-center bg-gray-100">
+                <p>No images available</p>
+              </div>
+            )}
           </div>
 
           {/* Property Details */}
@@ -98,13 +170,13 @@ export function PropertyDetailsPage() {
 
             <div className="mb-6 flex items-center text-gray-500">
               <MapPin className="mr-2 h-5 w-5" />
-              {property.address}
+              {property.location || `${property.block} ${property.street_name}, ${property.town}, ${property.city}`}
             </div>
 
             <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="flex items-center gap-2">
                 <Home className="h-5 w-5 text-gray-400" />
-                <span>{property.type}</span>
+                <span>{property.property_type}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Bed className="h-5 w-5 text-gray-400" />
@@ -125,17 +197,19 @@ export function PropertyDetailsPage() {
               <p className="text-gray-600">{property.description}</p>
             </div>
 
-            <div className="mb-8">
-              <h2 className="mb-4 text-2xl font-semibold">Amenities</h2>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {property.amenities.map((amenity) => (
-                  <div key={amenity} className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-gray-400" />
-                    <span>{amenity}</span>
-                  </div>
-                ))}
+            {amenities.length > 0 && (
+              <div className="mb-8">
+                <h2 className="mb-4 text-2xl font-semibold">Amenities</h2>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  {amenities.map((amenity, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-gray-400" />
+                      <span>{amenity}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -168,16 +242,19 @@ export function PropertyDetailsPage() {
                   type="text"
                   placeholder="Your Name"
                   className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  required
                 />
                 <input
                   type="email"
                   placeholder="Your Email"
                   className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  required
                 />
                 <textarea
                   placeholder="Your Message"
                   rows={4}
                   className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  required
                 ></textarea>
                 <Button type="submit" className="w-full">
                   Send Message
@@ -185,25 +262,10 @@ export function PropertyDetailsPage() {
               </form>
             )}
 
-            <div className="mt-6 border-t pt-6">
-              <div className="flex items-center">
-                <img
-                  src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200"
-                  alt="Agent"
-                  className="mr-4 h-16 w-16 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-semibold">Jane Smith</p>
-                  <p className="text-sm text-gray-500">(555) 123-4567</p>
-                  <p className="text-sm text-gray-500">jane.smith@rentease.com</p>
-                </div>
-              </div>
-            </div>
-
             <div className="mt-6 flex items-center justify-between border-t pt-6 text-sm text-gray-500">
               <div className="flex items-center">
                 <Calendar className="mr-2 h-5 w-5" />
-                Available Now
+                {property.status === 'available' ? 'Available Now' : property.status}
               </div>
               <div>Property ID: {property.id}</div>
             </div>

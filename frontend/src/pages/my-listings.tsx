@@ -7,7 +7,6 @@ import { createContext, useContext } from 'react';
 import { useAuth } from '../components/auth/auth-context';
 import { c } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
 
-
 interface Listing {
   id: number;
   owner: number;
@@ -19,31 +18,6 @@ interface Listing {
   price: number;
   location: string;
 }
-
-// Mock data for user's listings
-// const MY_LISTINGS = [
-//   {
-//     id: 1,
-//     title: 'Modern Condo in Orchard',
-//     status: 'active',
-//     views: 245,
-//     inquiries: 12,
-//     image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000',
-//     price: 4500,
-//     location: 'Orchard Road',
-//   },
-//   {
-//     id: 2,
-//     title: 'Cozy Studio near MRT',
-//     status: 'pending',
-//     views: 124,
-//     inquiries: 5,
-//     image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=1000',
-//     price: 2200,
-//     location: 'Tampines',
-//   },
-// ];
-
 
 export function MyListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -77,21 +51,6 @@ export function MyListingsPage() {
       fetchListings();
   }, [user]);
   
-  // console.log('User ID:', user?.id); // Check if user ID is being fetched correctly
-  // useEffect(() => {
-  //     const fetchListings = async () => {
-  //         try {
-  //             const response = await axios.get('http://localhost:8000/property/details/', {
-  //                 withCredentials: true,
-  //             });
-  //             setListings(response.data);
-  //         } catch (error) {
-  //             console.error('Error fetching listings:', error);
-  //         }
-  //     };
-
-  //     fetchListings();
-  // }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">

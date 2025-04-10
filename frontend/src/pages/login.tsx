@@ -57,15 +57,6 @@ export function LoginPage() {
     } finally {
       setLoading(false);
     }
-
-    // // Simulate login validation
-    // if (!email || !password) {
-    //   setError('Please fill in all fields');
-    //   return;
-    // }
-    // // Simulate successful login
-    // console.log('Logging in...', { email, password });
-    // setError('');
   };
 
   return (

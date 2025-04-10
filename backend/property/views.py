@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
 from django.shortcuts import render
 
@@ -51,6 +52,7 @@ class PropertyView(generics.ListAPIView):
 # view a single property using the property id
 class PropertyDetailView(generics.RetrieveAPIView):
     serializer_class = PropertySerializer
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
