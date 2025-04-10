@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ProgressSteps } from '../components/ui/progress-steps';
 import axios from "axios";
-import { create } from 'node_modules/axios/index.d.cts';
 
 interface ListingFormData {
   title: string;
@@ -25,6 +24,10 @@ interface ListingFormData {
   images: File[];
   videoUrl?: string;
   status: 'available' | 'rented' | 'sold';
+}
+
+interface FormErrors extends Partial<Record<keyof ListingFormData, string>> {
+  submit?: string;
 }
 
 const PROPERTY_TYPES = ['HDB', 'Condo', 'Landed', 'Apartment', 'Penthouse', 'Studio'];
@@ -84,7 +87,7 @@ export function CreateListingPage() {
     status: 'available',
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof ListingFormData, string>>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]); // New state for image previews
 
@@ -120,7 +123,11 @@ export function CreateListingPage() {
     };
 
     checkAuth();
-  }, [navigate, location]);
+    return () => {
+      // Clean up object URLs when component unmounts
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [navigate, location, imagePreviews]);
   
   const validateStep = (step: number) => {
     const newErrors: Partial<Record<keyof ListingFormData, string>> = {};
@@ -216,7 +223,7 @@ export function CreateListingPage() {
 
       // console.log('Form Data:', formData);
       // console.log('zip:', formData.zip_code);
-      console.log('Submitting listing:', formData);
+      console.log('Listing:', formData);
 
       const propertyData = {
         title: formData.title,
@@ -247,9 +254,10 @@ export function CreateListingPage() {
         },
         body: JSON.stringify(propertyData)
       });
-  
+      // console.log('Response:', response);
       const property = await response.json();
-      
+      // console.log('Property:', property);
+      // console.log("Owner ID: ", property.property.owner);
       if (formData.images.length > 0) {
         const formDataImages = new FormData();
         formData.images.forEach((file) => {
@@ -269,11 +277,8 @@ export function CreateListingPage() {
           throw new Error('Property created but failed to upload images');
         }
       }
-
-      navigate('/my-listings');
     } catch (error) {
       console.error('Error:', error);
-      console.error('hii:');
       setErrors({
         submit: error instanceof Error ? error.message : 'Failed to create listing'
       });
@@ -342,7 +347,7 @@ export function CreateListingPage() {
           </div>
 
           <div className="overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800">
-            <form onSubmit={handleSubmit} className="p-6">
+            <form onSubmit={currentStep === 4 ? handleSubmit : (e) => e.preventDefault()} className="p-6">
               {currentStep === 1 && (
                 <div className="space-y-6">
                   <div className="border-b pb-4 dark:border-gray-700">
@@ -693,10 +698,10 @@ export function CreateListingPage() {
                   <div className="rounded-lg border bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
                     <h2 className="mb-4 text-xl font-semibold dark:text-white">{formData.title}</h2>
 
-                    {formData.images.length > 0 && (
+                    {imagePreviews.length > 0 && (
                       <div className="mb-4 overflow-hidden rounded-lg">
                         <img
-                          src={formData.images[0]}
+                          src={imagePreviews[0]}
                           alt="Main property image"
                           className="h-64 w-full object-cover"
                         />
@@ -776,13 +781,15 @@ export function CreateListingPage() {
                     Continue
                   </Button>
                 ) : (
-                  <Button
+                    <Button
                     type="submit"
                     className="ml-auto px-6"
                     disabled={isSubmitting}
-                  >
+                    onClick={() => navigate('/my-listings')}
+                    >
                     {isSubmitting ? 'Publishing...' : 'Publish Listing'}
-                  </Button>
+                    </Button>
+
                 )}
               </div>
 
