@@ -58,6 +58,18 @@ class PropertyDetailView(generics.RetrieveAPIView):
         pk = self.kwargs.get('pk')
         return Property.objects.filter(id=pk)
     
+class UserPropertiesView(generics.ListAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        username = self.request.query_params.get('owner', None)
+        queryset = Property.objects.all().order_by('-created_at')
+
+        if username is not None:
+            queryset = queryset.filter(owner__username=username)
+        return queryset
+    
 # update a property
 class UpdatePropertyView(generics.UpdateAPIView):
     queryset = Property.objects.all()

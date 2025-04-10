@@ -27,9 +27,17 @@ export function LoginPage() {
         },
       });
 
-      // console.log('Login successful:', response.data);
       const token = response.data.token;
-      login(token);
+
+      const userResponse = await axios.get('http://localhost:8000/account/users/me/', {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+
+      // console.log('Login successful:', response.data);
+      const user = userResponse.data;
+      login(token, user);
       // localStorage.setItem('authToken', token);
 
       // navigate('/');

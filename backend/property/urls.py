@@ -11,6 +11,7 @@ from . import views
 
 urlpatterns = [
     path('all/', views.PropertyView.as_view(), name='properties_list'),
+    path('details/', views.UserPropertiesView.as_view(), name='properties_list_user'),
     path('details/<int:pk>/', views.PropertyDetailView.as_view(), name='property_detail'),
     path('details/<int:pk>/update/', views.UpdatePropertyView.as_view(), name='update_property'),
     path('details/<int:property_id>/images/', views.PropertyImageUploadView.as_view(), name='upload_images'),

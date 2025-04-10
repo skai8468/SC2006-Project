@@ -1,32 +1,84 @@
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { createContext, useContext } from 'react';
+import { useAuth } from '../components/auth/auth-context';
+
+
+interface Listing {
+  id: number;
+  title: string;
+  status: string;
+  views: number;
+  inquiries: number;
+  image: string;
+  price: number;
+  location: string;
+}
 
 // Mock data for user's listings
-const MY_LISTINGS = [
-  {
-    id: 1,
-    title: 'Modern Condo in Orchard',
-    status: 'active',
-    views: 245,
-    inquiries: 12,
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000',
-    price: 4500,
-    location: 'Orchard Road',
-  },
-  {
-    id: 2,
-    title: 'Cozy Studio near MRT',
-    status: 'pending',
-    views: 124,
-    inquiries: 5,
-    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=1000',
-    price: 2200,
-    location: 'Tampines',
-  },
-];
+// const MY_LISTINGS = [
+//   {
+//     id: 1,
+//     title: 'Modern Condo in Orchard',
+//     status: 'active',
+//     views: 245,
+//     inquiries: 12,
+//     image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000',
+//     price: 4500,
+//     location: 'Orchard Road',
+//   },
+//   {
+//     id: 2,
+//     title: 'Cozy Studio near MRT',
+//     status: 'pending',
+//     views: 124,
+//     inquiries: 5,
+//     image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=1000',
+//     price: 2200,
+//     location: 'Tampines',
+//   },
+// ];
+
 
 export function MyListingsPage() {
+  const [listings, setListings] = useState<Listing[]>([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchListings = async () => {
+        try {
+            const apiUrl = `http://localhost:8000/property/all/?owner=${user?.username}`;
+
+            const response = await axios.get(apiUrl, {
+                withCredentials: true,
+            });
+            setListings(response.data);
+        } catch (error) {
+            console.error('Error fetching listings:', error);
+        }
+    };
+
+      fetchListings();
+  }, [user]);
+  
+  // useEffect(() => {
+  //     const fetchListings = async () => {
+  //         try {
+  //             const response = await axios.get('http://localhost:8000/property/details/', {
+  //                 withCredentials: true,
+  //             });
+  //             setListings(response.data);
+  //         } catch (error) {
+  //             console.error('Error fetching listings:', error);
+  //         }
+  //     };
+
+  //     fetchListings();
+  // }, []);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
@@ -41,7 +93,7 @@ export function MyListingsPage() {
 
       {/* Listings Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {MY_LISTINGS.map((listing) => (
+        {listings.map((listing) => (
           <div
             key={listing.id}
             className="overflow-hidden rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md"
