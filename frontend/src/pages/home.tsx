@@ -104,14 +104,14 @@ export function HomePage() {
                   </h3>
                   <div className="mb-4 flex items-center text-gray-200">
                     <MapPin className="mr-1 h-4 w-4" />
-                    <span className="line-clamp-1">{property.location}</span>
+                    <span className="line-clamp-1">{property.address}</span>
                   </div>
 
                   <div className="flex items-center justify-between border-t border-white/20 pt-4">
                     <div className="flex space-x-4 text-sm text-gray-200">
                       <div>{property.bedrooms} beds</div>
                       <div>{property.bathrooms} baths</div>
-                      <div>{property.sqft} sqft</div>
+                      <div>{property.square_feet} sqft</div>
                     </div>
                     <div className="flex items-center text-white">
                       <span className="mr-1 text-sm font-medium">View Details</span>

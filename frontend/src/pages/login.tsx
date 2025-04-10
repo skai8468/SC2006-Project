@@ -2,9 +2,11 @@ import { LogIn } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import { useAuth } from '../components/auth/auth-context';
 import axios from 'axios';
 
 export function LoginPage() {
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,12 +27,12 @@ export function LoginPage() {
         },
       });
 
-      console.log('Login successful:', response.data);
+      // console.log('Login successful:', response.data);
       const token = response.data.token;
+      login(token);
+      // localStorage.setItem('authToken', token);
 
-      localStorage.setItem('authToken', token);
-
-      navigate('/');
+      // navigate('/');
 
     } catch (error) {
       if (axios.isAxiosError(error)) {
