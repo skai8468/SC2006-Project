@@ -1,4 +1,5 @@
-import { Home, LogIn, Menu, Plus, Search, X } from 'lucide-react';
+import { Home, LogIn, LogOut, Menu, Plus, Search, User, X } from 'lucide-react';
+import { useAuth } from '../auth/auth-context';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
@@ -6,6 +7,7 @@ import { ThemeToggle } from '../ui/theme-toggle';
 import axios from 'axios';
 
 export function Header() {
+  const { isAuthenticated, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -77,19 +79,40 @@ export function Header() {
             <Link to="/contact" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
               Contact
             </Link>
-            <Link to="/create-listing">
-              <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Add Listing</span>
-              </Button>
-            </Link>
+            {isAuthenticated && (
+              <Link to="/create-listing">
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Add Listing</span>
+                </Button>
+              </Link>
+            )}
             <ThemeToggle />
-            <Link to="/login">
-              <Button variant="primary" size="sm" className="flex items-center space-x-2">
-                <LogIn className="h-4 w-4" />
-                <span>Login</span>
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                <Link to="/profile">
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Button 
+                  variant="primary" 
+                  size="sm" 
+                  className="flex items-center space-x-2"
+                  onClick={logout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
+              </div>
+            ) : (
+              <Link to="/login">
+                <Button variant="primary" size="sm" className="flex items-center space-x-2">
+                  <LogIn className="h-4 w-4" />
+                  <span>Login</span>
+                </Button>
+              </Link>
+            )}
           </nav>
 
           <button
@@ -145,27 +168,48 @@ export function Header() {
               >
                 Contact
               </Link>
-              <Link
-                to="/create-listing"
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-              >
-                <div className="flex items-center space-x-2">
-                  <Plus className="h-4 w-4" />
-                  <span>Add Listing</span>
-                </div>
-              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/create-listing"
+                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Plus className="h-4 w-4" />
+                      <span>Add Listing</span>
+                    </div>
+                  </Link>
+                  <Link to="/profile" className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800">
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4" />
+                      <span>Profile</span>
+                    </div>
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="block w-full rounded-md px-3 py-2 text-left text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <LogOut className="h-4 w-4" />
+                      <span>Logout</span>
+                    </div>
+                  </button>
+                </>
+              )}
               <div className="px-3 py-2">
                 <ThemeToggle />
               </div>
-              <Link
-                to="/login"
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-              >
-                <div className="flex items-center space-x-2">
-                  <LogIn className="h-4 w-4" />
-                  <span>Login</span>
-                </div>
-              </Link>
+              {!isAuthenticated && (
+                <Link
+                  to="/login"
+                  className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  <div className="flex items-center space-x-2">
+                    <LogIn className="h-4 w-4" />
+                    <span>Login</span>
+                  </div>
+                </Link>
+              )}
             </div>
           )}
         </div>

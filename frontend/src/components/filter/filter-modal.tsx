@@ -20,6 +20,7 @@ interface FilterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApply: (filters: FilterValues) => void;
+  propertyCount: number;
 }
 
 const PLACE_TYPES = ["Entire Place", "Private Room", "Shared Room"];
@@ -47,7 +48,7 @@ const AMENITIES = [
   "Kitchen",
 ];
 
-export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
+export function FilterModal({ isOpen, onClose, onApply, propertyCount }: FilterModalProps) {
   const [filters, setFilters] = useState<FilterValues>({
     propertyTypes: [],
     priceRange: [0, 10000],
@@ -64,44 +65,44 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
     : AMENITIES.slice(0, 6);
 
   // Calculate filtered properties count whenever filters change
-  useEffect(() => {
-    const count = PROPERTIES.filter((property) => {
-      if (
-        filters.propertyTypes.length > 0 &&
-        !filters.propertyTypes.includes(property.type)
-      ) {
-        return false;
-      }
+  // useEffect(() => {
+  //   const count = PROPERTIES.filter((property) => {
+  //     if (
+  //       filters.propertyTypes.length > 0 &&
+  //       !filters.propertyTypes.includes(property.type)
+  //     ) {
+  //       return false;
+  //     }
 
-      if (
-        property.price < filters.priceRange[0] ||
-        property.price > filters.priceRange[1]
-      ) {
-        return false;
-      }
+  //     if (
+  //       property.price < filters.priceRange[0] ||
+  //       property.price > filters.priceRange[1]
+  //     ) {
+  //       return false;
+  //     }
 
-      if (filters.bedrooms > 0 && property.bedrooms < filters.bedrooms) {
-        return false;
-      }
+  //     if (filters.bedrooms > 0 && property.bedrooms < filters.bedrooms) {
+  //       return false;
+  //     }
 
-      if (filters.bathrooms > 0 && property.bathrooms < filters.bathrooms) {
-        return false;
-      }
+  //     if (filters.bathrooms > 0 && property.bathrooms < filters.bathrooms) {
+  //       return false;
+  //     }
 
-      if (
-        filters.amenities.length > 0 &&
-        !filters.amenities.every((amenity) =>
-          property.amenities.includes(amenity)
-        )
-      ) {
-        return false;
-      }
+  //     if (
+  //       filters.amenities.length > 0 &&
+  //       !filters.amenities.every((amenity) =>
+  //         property.amenities.includes(amenity)
+  //       )
+  //     ) {
+  //       return false;
+  //     }
 
-      return true;
-    }).length;
+  //     return true;
+  //   }).length;
 
-    setFilteredCount(count);
-  }, [filters]);
+  //   setFilteredCount(count);
+  // }, [filters]);
 
   useEffect(() => {
     if (isOpen) {
@@ -256,8 +257,7 @@ export function FilterModal({ isOpen, onClose, onApply }: FilterModalProps) {
             Clear all
           </button>
           <Button onClick={() => onApply(filters)}>
-            Show {filteredCount}{" "}
-            {filteredCount === 1 ? "property" : "properties"}
+            Show {propertyCount} {propertyCount === 1 ? "property" : "properties"}
           </Button>
         </div>
       </div>

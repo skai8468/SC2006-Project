@@ -10,10 +10,12 @@ import { MyListingsPage } from './pages/my-listings';
 import { PropertiesPage } from './pages/properties';
 import { PropertyDetailsPage } from './pages/property-details';
 import { RegisterPage } from './pages/register';
+import { AuthProvider } from './components/auth/auth-context';
 
 function App() {
   return (
     <Router>
+      <AuthProvider>
       <div className="flex min-h-screen flex-col">
         <Header />
         <main className="flex-1">
@@ -31,6 +33,7 @@ function App() {
         </main>
         <Footer />
       </div>
+      </AuthProvider>
     </Router>
   );
 }
