@@ -118,3 +118,67 @@ class CurrentUserProfileView(generics.RetrieveAPIView):
     def get_object(self):
         print("Fetching current user profile...")
         return self.request.user
+
+# view all favorite properties of a user
+class UserFavoritePropertiesView(generics.ListAPIView):
+    serializer_class = PropertySerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            print("User is not authenticated")
+            return Property.objects.none()
+        user_fav_properties = user.favorite_properties.all()
+        
+        print("User favorite properties:", user_fav_properties)
+        
+        return user_fav_properties
+    
+# add a property to favorites
+class AddToFavoritesView(generics.GenericAPIView):
+    serializer_class = PropertySerializer
+    
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        property_id = request.data.get('property_id')
+        
+        if not property_id:
+            return Response({"message": "Property ID is required"}, status=400)
+        
+        try:
+            property_instance = Property.objects.get(id=property_id)
+            user.favorite_properties.add(property_instance)
+            return Response({"message": "Property added to favorites"}, status=200)
+        except Property.DoesNotExist:
+            return Response({"message": "Property not found"}, status=404)
+
+# remove a property from favorites
+class RemoveFromFavoritesView(generics.GenericAPIView):
+    serializer_class = PropertySerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        property_id = request.data.get('property_id')
+        if not property_id:
+            return Response({"message": "Property ID is required"}, status=400)
+        
+        try:
+            property_instance = Property.objects.get(id=property_id)
+            
+            # check user has the property in favorites
+            if not user.favorite_properties.filter(id=property_id).exists():
+                return Response({"message": "Property not found in favorites"}, status=404)
+            user.favorite_properties.remove(property_instance)
+            
+            return Response({"message": "Property removed from favorites"}, status=200)
+        # except the property does not exist or the user does not have it in favorites
+        except Property.DoesNotExist:
+            return Response({"message": "Property not found in favorites"}, status=404)
+        
