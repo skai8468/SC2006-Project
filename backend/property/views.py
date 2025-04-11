@@ -16,7 +16,12 @@ class TokenVerifyView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure that only authenticated users can access this view
 
     def get(self, request):
-        return Response({"message": "Token is valid."}, status=status.HTTP_200_OK)
+        # return Response({"message": "Token is valid."}, status=status.HTTP_200_OK)
+        return Response({
+            "id": request.user.id,
+            "username": request.user.username,
+            "email": request.user.email,
+        })
     
 
 class PropertyImageUploadView(APIView):
@@ -53,13 +58,27 @@ class PropertyView(generics.ListAPIView):
 class PropertyDetailView(generics.RetrieveAPIView):
     serializer_class = PropertySerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated] or [AllowAny]
+    permission_classes = [AllowAny]
+    
+    # def get(self, request, pk):
+    #     try:
+    #         property = Property.objects.get(pk=pk)
+    #         serializer = PropertySerializer(property)
+    #         return Response(serializer.data)
+    #     except Property.DoesNotExist:
+    #         return Response(status=status.HTTP_404_NOT_FOUND)
     
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Property.objects.none()
         pk = self.kwargs.get('pk')
         return Property.objects.filter(id=pk)
+    
+class PropertyDeleteView(generics.DestroyAPIView):
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
+
+
     
 class UserPropertiesView(generics.ListAPIView):
     serializer_class = PropertySerializer

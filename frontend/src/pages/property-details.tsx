@@ -10,6 +10,7 @@ import {
   Phone,
   Share2,
   Square,
+  Trash2,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -52,56 +53,182 @@ export function PropertyDetailsPage() {
   const [images, setImages] = useState<string[]>([]);
   const [amenities, setAmenities] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    block: '',
+    street_name: '',
+    town: '',
+    city: '',
+    property_type: '',
+    bedrooms: 0,
+    bathrooms: 0,
+    square_feet: 0,
+    amenities: '',
+    images: [],
+    status: '',
+    latitude: '',
+    longitude: '',
+    zip_code: '',
+  });
+
+  const token = localStorage.getItem('authToken');
+
+  const isOwner = currentUser && property && property.owner === currentUser.id;
 
   useEffect(() => {
-    const fetchProperty = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:8000/property/details/${id}/`
+    const fetchData = async () => {
+        try {
+          if (token) {
+            try {
+              const [userRequest, propertyRequest] = await Promise.all([
+                  axios.get('http://localhost:8000/property/api/auth/verify/', {
+                      headers: { Authorization: `Token ${token}` },
+                  }),
+                  axios.get(`http://localhost:8000/property/details/${id}`),
+              ]);
+              setCurrentUser(userRequest.data);
+            } catch (error) {
+              console.warn('User not authenticated or token invalid');
+              setCurrentUser(null);
+            }
+          }
+
+          const propertyResponse = await axios.get(`http://localhost:8000/property/details/${id}`);
+          const data = propertyResponse.data;
+          setProperty(data);
+
+          setFormData({
+              title: data.data.title,
+              description: data.data.description,
+              price: data.data.price,
+              block: data.data.block,
+              street_name: data.data.street_name,
+              town: data.data.town,
+              city: data.data.city,
+              property_type: data.data.property_type,
+              bedrooms: data.data.bedrooms,
+              bathrooms: data.data.bathrooms,
+              square_feet: data.data.square_feet,
+              amenities: data.data.amenities,
+              images: data.data.images,
+              status: data.data.status,
+              latitude: data.data.latitude,
+              longitude: data.data.longitude,
+              zip_code: data.data.zip_code,
+          });
+
+        setImages(data.images || []);
+        setAmenities(
+          typeof data.amenities === 'string'
+            ? data.amenities.split(',').map((a: string) => a.trim())
+            : data.amenities || []
         );
-        
-        const propertyData = response.data;
-        setProperty(propertyData);
-        console.log('Fetched property:', response.data);
-        setImages(propertyData.images || []);
 
-        if (typeof propertyData.amenities === 'string') {
-          setAmenities(propertyData.amenities.split(',').map((a: string) => a.trim()));
-        } else if (Array.isArray(propertyData.amenities)) {
-          setAmenities(propertyData.amenities);
-        } else {
-          setAmenities([]);
-        }
       } catch (err) {
-        setError('Failed to fetch property details');
-        console.error('Error fetching property:', err);
-
+          console.error('Fetch error:', err);
       } finally {
-        setLoading(false);
+          setLoading(false);
       }
     };
-  
-    fetchProperty();
-  }, [id]);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <p>Loading property details...</p>
-        </div>
-      </div>
-    );
+    fetchData();
+  }, [id, token]);
+
+  const handleEditToggle = () => setIsEditing(prev => !prev);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+        ...prev,
+        [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this listing?')) return;
+    if (!token) throw new Error('No auth token found');
+    try {
+      const token = localStorage.getItem('authToken');
+      await axios.delete(`http://localhost:8000/property/details/${property.id}/delete/`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+        },
+      });
+      alert('Listing deleted successfully!');
+      navigate('/my-listings');
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      alert('Failed to delete the listing. Please try again.');
+    }
   }
+
+
+  const handleSave = async () => {
+    try {
+      const res = await axios.put(
+          `http://localhost:8000/property/details/${id}/update/`,
+          formData,
+          {
+              headers: {
+                  Authorization: `Token ${token}`,
+                  'Content-Type': 'application/json',
+              },
+          }
+      );
+
+      // console.log('Updated data:', res.data);
+
+      const updatedData = res.data;
+
+      setProperty(updatedData);
+      setFormData({
+        title: updatedData.title,
+        description: updatedData.description,
+        price: updatedData.price,
+        block: updatedData.block,
+        street_name: updatedData.street_name,
+        town: updatedData.town,
+        city: updatedData.city,
+        property_type: updatedData.property_type,
+        bedrooms: updatedData.bedrooms,
+        bathrooms: updatedData.bathrooms,
+        square_feet: updatedData.square_feet,
+        amenities: updatedData.amenities,
+        images: updatedData.images || [],
+        status: updatedData.status,
+        latitude: updatedData.latitude,
+        longitude: updatedData.longitude,
+        zip_code: updatedData.zip_code,
+      });
+      setImages(updatedData.images || []);
+      setAmenities(
+        typeof updatedData.amenities === 'string'
+          ? updatedData.amenities.split(',').map((a: string) => a.trim())
+          : updatedData.amenities || []
+      );
+      setIsEditing(false);
+      window.location.reload();
+    } catch (err) {
+      console.error('Error saving property:', err);
+      alert('Error updating listing. Please check required fields.');
+    }
+  };
 
   if (error || !property) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="rounded-lg border bg-white p-8 text-center">
-          <h1 className="mb-4 text-2xl font-bold text-gray-900">Property Not Found</h1>
+          <h1 className="mb-4 text-2xl font-bold text-gray-900">
+            {error === 'Property not found' ? 'Property Not Found' : 'Error Loading Property'}
+          </h1>
           <p className="mb-6 text-gray-600">
-            {error || 'Sorry, we couldn\'t find the property you\'re looking for.'}
+            {error === 'Property not found'
+              ? "Sorry, we couldn't find the property you're looking for."
+              : "Failed to load property details. Please try again later."}
           </p>
           <Button onClick={() => navigate('/properties')}>Back to Properties</Button>
         </div>
@@ -148,10 +275,23 @@ export function PropertyDetailsPage() {
             )}
           </div>
 
+          
+
           {/* Property Details */}
           <div className="mb-8">
             <div className="mb-4 flex items-center justify-between">
-              <h1 className="text-3xl font-bold">{property.title}</h1>
+              {/* <h1 className="text-3xl font-bold">{property.title}</h1> */}
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className="text-3xl font-bold w-full border p-2 rounded"
+                />
+              ) : (
+                <h1 className="text-3xl font-bold">{property.title}</h1>
+              )}
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -171,6 +311,10 @@ export function PropertyDetailsPage() {
             <div className="mb-6 flex items-center text-gray-500">
               <MapPin className="mr-2 h-5 w-5" />
               {property.location || `${property.block} ${property.street_name}, ${property.town}, ${property.city}`}
+              {/* <div className="mb-6 flex items-center text-gray-500">
+                <MapPin className="mr-2 h-5 w-5" />
+                {property.location || `${property.block} ${property.street_name}, ${property.town}, ${property.city}`}
+              </div> */}
             </div>
 
             <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -194,8 +338,30 @@ export function PropertyDetailsPage() {
 
             <div className="mb-8">
               <h2 className="mb-4 text-2xl font-semibold">Description</h2>
-              <p className="text-gray-600">{property.description}</p>
+              {/* <p className="text-gray-600">{property.description}</p> */}
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="text-gray-600 w-full border p-2 rounded"
+                />
+              ) : (
+                <p className="text-gray-600">{property.description}</p>
+              )}
             </div>
+
+            {isEditing && (
+              <div className="flex gap-2 mt-6">
+                <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700 text-white">
+                  Save
+                </Button>
+                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  Cancel
+                </Button>
+              </div>
+            )}
 
             {amenities.length > 0 && (
               <div className="mb-8">
@@ -219,7 +385,32 @@ export function PropertyDetailsPage() {
             <div className="mb-6 text-center">
               <p className="text-3xl font-bold text-blue-600">${property.price}</p>
               <p className="text-gray-500">per month</p>
+              <br />
+              {isOwner && isEditing && (
+                <div className="mb-6 space-y-4">
+                  <Button 
+                    variant="outline"
+                    onClick={handleDelete}
+                    className="w-full"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Listing
+                  </Button>
+                </div>
+              )}
             </div>
+
+            {isOwner && !isEditing && (
+              <div className="mb-6 space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit Listing
+                </Button>
+              </div>
+            )}
 
             <div className="mb-6 space-y-4">
               <Button className="w-full">
@@ -275,3 +466,4 @@ export function PropertyDetailsPage() {
     </div>
   );
 }
+export default PropertyDetailsPage;
