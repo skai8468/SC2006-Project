@@ -109,3 +109,12 @@ class UserPropertiesView(generics.ListAPIView):
         username = self.kwargs.get('username')
         user = get_object_or_404(User, username=username)
         return Property.objects.filter(owner=user)
+    
+class CurrentUserProfileView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+    def get_object(self):
+        print("Fetching current user profile...")
+        return self.request.user

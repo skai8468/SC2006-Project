@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../components/auth/auth-context';
 import axios from 'axios';
+import { c } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -27,9 +28,17 @@ export function LoginPage() {
         },
       });
 
-      // console.log('Login successful:', response.data);
       const token = response.data.token;
-      login(token);
+
+      const userResponse = await axios.get('http://localhost:8000/account/users/me/', {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+
+      // console.log('Login successful:', userResponse.data);
+      const user = userResponse.data;
+      login(token, user);
       // localStorage.setItem('authToken', token);
 
       // navigate('/');
@@ -48,15 +57,6 @@ export function LoginPage() {
     } finally {
       setLoading(false);
     }
-
-    // // Simulate login validation
-    // if (!email || !password) {
-    //   setError('Please fill in all fields');
-    //   return;
-    // }
-    // // Simulate successful login
-    // console.log('Logging in...', { email, password });
-    // setError('');
   };
 
   return (
