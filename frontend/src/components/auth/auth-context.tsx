@@ -2,15 +2,30 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+}
+
 interface AuthContextType {
+  user : User | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (token: string, userData: User) => void;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  login: () => {},
+  logout: () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
 
@@ -21,8 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = (token: string) => {
+  const login = (token: string, userData: User) => {
     localStorage.setItem('authToken', token);
+    setUser(userData);
     setIsAuthenticated(true);
     navigate('/');
   };
@@ -43,13 +59,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } finally {
       localStorage.removeItem('authToken');
+      setUser(null);
       setIsAuthenticated(false);
       navigate('/');
     }
   };
 
+
+  // console.log('AuthProvider:', { user, isAuthenticated });
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, user }}>
       {children}
     </AuthContext.Provider>
   );
@@ -57,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

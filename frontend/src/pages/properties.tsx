@@ -29,7 +29,7 @@ export function PropertiesPage() {
         const data = await res.json();
 
         if (res.ok) {
-          console.log('Fetched properties:', data);
+          // console.log('Fetched properties:', data);
           setProperties(data);
         } else {
           console.error('Failed to fetch properties:', data);
@@ -44,7 +44,7 @@ export function PropertiesPage() {
 
   // Apply filters to properties
   const filteredProperties = properties.filter((property) => {
-    console.log(`Checking property ${property.id}:`, property);
+    // console.log(`Checking property ${property.id}:`, property);
     
     // Search query
     if (
@@ -100,7 +100,7 @@ export function PropertiesPage() {
     title: property.title,
     price: property.price,
     location: property.location,
-    coordinates: [(property.latitude), (property.longitude)],
+    coordinates: [parseFloat(property.latitude), parseFloat(property.longitude)],
     image: property.image,
   }));
 

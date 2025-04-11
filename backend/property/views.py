@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
 from django.shortcuts import render
 
@@ -15,7 +16,12 @@ class TokenVerifyView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure that only authenticated users can access this view
 
     def get(self, request):
-        return Response({"message": "Token is valid."}, status=status.HTTP_200_OK)
+        # return Response({"message": "Token is valid."}, status=status.HTTP_200_OK)
+        return Response({
+            "id": request.user.id,
+            "username": request.user.username,
+            "email": request.user.email,
+        })
     
 
 class PropertyImageUploadView(APIView):
@@ -51,12 +57,41 @@ class PropertyView(generics.ListAPIView):
 # view a single property using the property id
 class PropertyDetailView(generics.RetrieveAPIView):
     serializer_class = PropertySerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [AllowAny]
+    
+    # def get(self, request, pk):
+    #     try:
+    #         property = Property.objects.get(pk=pk)
+    #         serializer = PropertySerializer(property)
+    #         return Response(serializer.data)
+    #     except Property.DoesNotExist:
+    #         return Response(status=status.HTTP_404_NOT_FOUND)
     
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Property.objects.none()
         pk = self.kwargs.get('pk')
         return Property.objects.filter(id=pk)
+    
+class PropertyDeleteView(generics.DestroyAPIView):
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
+
+
+    
+class UserPropertiesView(generics.ListAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        owner_id = self.request.query_params.get('owner_id', None)
+        queryset = Property.objects.all().order_by('-created_at')
+        print("Fetching properties for user...")
+        if owner_id:
+            queryset = queryset.filter(owner_id=owner_id)
+            print("Fetching properties for owner_id:", owner_id)
+        return queryset
     
 # update a property
 class UpdatePropertyView(generics.UpdateAPIView):
