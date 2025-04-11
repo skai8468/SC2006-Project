@@ -12,8 +12,8 @@ from django.shortcuts import get_object_or_404
 from .models import *
 from .serializer import *
 
-from property.models import Property
-from property.serializer import PropertySerializer
+from property.models import Property, PropertyRequest
+from property.serializer import PropertySerializer, PropertyRequestSerializer
 
 # view all users
 class UsersListView(generics.ListAPIView):
@@ -172,4 +172,3 @@ class RemoveFromFavoritesView(generics.GenericAPIView):
         # except the property does not exist or the user does not have it in favorites
         except Property.DoesNotExist:
             return Response({"message": "Property not found in favorites"}, status=404)
-        
