@@ -74,6 +74,37 @@ class PropertyDetailView(generics.RetrieveAPIView):
             return Property.objects.none()
         pk = self.kwargs.get('pk')
         return Property.objects.filter(id=pk)
+
+class UserPropertiesView(generics.ListAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        owner_id = self.request.query_params.get('owner_id', None)
+        queryset = Property.objects.all().order_by('-created_at')
+        print("Fetching properties for user...")
+        if owner_id:
+            queryset = queryset.filter(owner_id=owner_id)
+            print("Fetching properties for owner_id:", owner_id)
+        return queryset
+
+class PropertyDeleteView(generics.DestroyAPIView):
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    
+    def delete(self, request, pk):
+        try:
+            property = Property.objects.get(pk=pk)
+            # check if the user is the owner of the property
+            if property.owner != request.user:
+                return Response({'message': 'You do not have permission to delete this property'},
+                                status=status.HTTP_403_FORBIDDEN)
+            property.delete()
+            return Response({'message': 'Property deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        except Property.DoesNotExist:
+            return Response({'message': 'Property not found'}, status=status.HTTP_404_NOT_FOUND)
     
 # request to create a new property
 class CreatePropertyRequestView(generics.CreateAPIView):

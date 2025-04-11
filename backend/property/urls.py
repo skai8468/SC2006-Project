@@ -13,7 +13,6 @@ urlpatterns = [
     path('all/', views.PropertyListView.as_view(), name='properties_list'),
     path('details/user/<int:id>/', views.UserPropertiesView.as_view(), name='properties_list_user'),
     path('details/<int:pk>/', views.PropertyDetailView.as_view(), name='property_detail'),
-    path('details/<int:pk>/update/', views.UpdatePropertyView.as_view(), name='update_property'),
     path('details/<int:pk>/delete/', views.PropertyDeleteView.as_view(), name='delete_property'),
     path('details/<int:property_id>/images/', views.PropertyImageUploadView.as_view(), name='upload_images'),
     path('creating-request/', views.CreatePropertyRequestView.as_view(), name='create_property_request'),
