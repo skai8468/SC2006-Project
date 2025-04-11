@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
 from django.shortcuts import get_object_or_404, render
 
@@ -15,7 +16,12 @@ class TokenVerifyView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure that only authenticated users can access this view
 
     def get(self, request):
-        return Response({"message": "Token is valid."}, status=status.HTTP_200_OK)
+        # return Response({"message": "Token is valid."}, status=status.HTTP_200_OK)
+        return Response({
+            "id": request.user.id,
+            "username": request.user.username,
+            "email": request.user.email,
+        })
     
 
 class PropertyImageUploadView(APIView):
@@ -52,6 +58,16 @@ class PropertyListView(generics.ListAPIView):
 # view a single property using the property id
 class PropertyDetailView(generics.RetrieveAPIView):
     serializer_class = PropertySerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [AllowAny]
+    
+    # def get(self, request, pk):
+    #     try:
+    #         property = Property.objects.get(pk=pk)
+    #         serializer = PropertySerializer(property)
+    #         return Response(serializer.data)
+    #     except Property.DoesNotExist:
+    #         return Response(status=status.HTTP_404_NOT_FOUND)
     
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):

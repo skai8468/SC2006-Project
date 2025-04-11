@@ -198,32 +198,42 @@ export function CreateListingPage() {
 
       // console.log('Processing zip code');
       // console.log('Address:', formData.location);
-      const url = `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${formData.location}&returnGeom=Y&getAddrDetails=Y&pageNum=1`;
-      // const url = `https://developers.onemap.sg/commonapi/search?searchVal=${encodeURIComponent(formData.location)}&returnGeom=Y&getAddrDetails=Y`;
-
       try {
-        const response = await axios.get(url);
+        // const url = `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${formData.location}&returnGeom=Y&getAddrDetails=Y&pageNum=1`;
+        // const url = `https://developers.onemap.sg/commonapi/search?searchVal=${encodeURIComponent(formData.location)}&returnGeom=Y&getAddrDetails=Y`;
+
+        const response = await axios.get(`https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${formData.location}&returnGeom=Y&getAddrDetails=Y&pageNum=1`);
         const data = response.data;
         if (data.results && data.results.length > 0) {
-          const zip_code = data.results[0].POSTAL; // Return postal code
-          const block = data.results[0].BLK_NO; // Return block number
-          const road_name = data.results[0].ROAD_NAME; // Return road name
-          const longitude = data.results[0].LONGITUDE; // Return longitude
-          const latitude = data.results[0].LATITUDE; // Return latitude
-          formData.zip_code = zip_code; // Assign the postal code to formData
+          const zip_code = data.results[0].POSTAL;
+          const block = data.results[0].BLK_NO;
+          const road_name = data.results[0].ROAD_NAME;
+          const longitude = data.results[0].LONGITUDE; 
+          const latitude = data.results[0].LATITUDE;
+          formData.zip_code = zip_code;
           formData.block = block;
           formData.road_name = road_name;
           formData.longitude = longitude;
           formData.latitude = latitude;
+          // formData.coordinates = [longitude, latitude];
+          // setFormData(prev => ({
+          //   ...prev,
+          //   zip_code,
+          //   block,
+          //   road_name,
+          //   longitude,
+          //   latitude,
+          //   coordinates: [longitude, latitude]
+          // }));
           // console.log('block:', formData.block);
         }
       } catch (error) {
-        console.error("Error fetching postal code:", error);
+        console.error("Error fetching location code:", error);
       }
 
       // console.log('Form Data:', formData);
       // console.log('zip:', formData.zip_code);
-      console.log('Listing:', formData);
+      // console.log('Listing:', formData);
 
       const propertyData = {
         title: formData.title,
@@ -255,6 +265,11 @@ export function CreateListingPage() {
         body: JSON.stringify(propertyData)
       });
       // console.log('Response:', response);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create property');
+      }
+
       const property = await response.json();
       // console.log('Property:', property);
       // console.log("Owner ID: ", property.property.owner);
@@ -265,7 +280,7 @@ export function CreateListingPage() {
         });
 
         // console.log("Owner ID: ", property.property.owner);
-        const imagesResponse = await fetch(`http://127.0.0.1:8000/property/details/${property.property.owner}/images/`, {
+        const imagesResponse = await fetch(`http://127.0.0.1:8000/property/details/${property.id}/images/`, {
           method: 'POST',
           headers: {
             'Authorization': `Token ${token}`
@@ -277,6 +292,8 @@ export function CreateListingPage() {
           throw new Error('Property created but failed to upload images');
         }
       }
+
+      
     } catch (error) {
       console.error('Error:', error);
       setErrors({
