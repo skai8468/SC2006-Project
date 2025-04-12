@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, render
 from .models import *
 from .serializer import *
 
+import os
 class TokenVerifyView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure that only authenticated users can access this view
 
@@ -41,8 +42,12 @@ class PropertyImageUploadView(APIView):
             for image in images:
                 PropertyImage.objects.create(property=property, image=image)
 
-            return Response({'message': 'Images uploaded successfully'}, status=status.HTTP_201_CREATED)
-        
+            return Response({
+                'message': 'Images uploaded successfully',
+                'property_id': property.id,
+                'images': [img.image.url for img in PropertyImage.objects.filter(property=property)]
+            }, status=status.HTTP_201_CREATED)
+
         except Property.DoesNotExist:
             return Response({'message': 'Property not found'}, status=status.HTTP_404_NOT_FOUND)
     
@@ -54,6 +59,19 @@ class PropertyListView(generics.ListAPIView):
     def get_queryset(self):
         print("Fetching properties...")
         return super().get_queryset().order_by('-created_at')
+    
+    def get_serializer_context(self):
+        return {'request': self.request}
+    
+    def list(self, request, *args, **kwargs):
+        # Fetch properties
+        properties = self.get_queryset()
+        serializer = self.get_serializer(properties, many=True)
+        
+        # Debugging: Print the serialized data to check if images are included
+        print("Serialized Properties Data:", serializer.data)
+        
+        return Response(serializer.data)
 
 # view a single property using the property id
 class PropertyDetailView(generics.RetrieveAPIView):
@@ -61,19 +79,38 @@ class PropertyDetailView(generics.RetrieveAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [AllowAny]
     
-    # def get(self, request, pk):
-    #     try:
-    #         property = Property.objects.get(pk=pk)
-    #         serializer = PropertySerializer(property)
-    #         return Response(serializer.data)
-    #     except Property.DoesNotExist:
-    #         return Response(status=status.HTTP_404_NOT_FOUND)
-    
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Property.objects.none()
         pk = self.kwargs.get('pk')
         return Property.objects.filter(id=pk)
+    
+    def get_serializer_context(self):
+        return {'request': self.request}
+    
+class PropertyDeleteView(generics.DestroyAPIView):
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user != instance.owner:
+            return Response({
+                "message": "You are not authorized to delete this property"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        for image in instance.images.all():
+            if image.image and os.path.isfile(image.image.path):
+                os.remove(image.image.path)
+            image.delete()
+
+        self.perform_destroy(instance)
+        return Response({
+            "message": "Property deleted successfully"
+        }, status=status.HTTP_200_OK)
 
 class UserPropertiesView(generics.ListAPIView):
     serializer_class = PropertySerializer

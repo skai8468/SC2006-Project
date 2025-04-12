@@ -46,7 +46,7 @@ export function PropertyImage({ src, alt, className = '', aspectRatio = '3/2' }:
       <img
         src={src}
         alt={alt}
-        className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+        className="h-full w-full object-contain transition-transform duration-300 hover:scale-105"
         onError={() => setError(true)} // Simplified error handling
       />
     </div>
