@@ -164,7 +164,6 @@ export function RegisterPage() {
           <div>
             <Button type="submit" className="w-full">
               <UserPlus className="mr-2 h-4 w-4" />
-              Create Account
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </div>
