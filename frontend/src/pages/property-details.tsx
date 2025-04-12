@@ -101,28 +101,30 @@ export function PropertyDetailsPage() {
           const propertyResponse = await axios.get(`http://localhost:8000/property/details/${id}`);
           const data = propertyResponse.data;
           setProperty(data);
-
           setFormData({
-              title: data.data.title,
-              description: data.data.description,
-              price: data.data.price,
-              block: data.data.block,
-              street_name: data.data.street_name,
-              town: data.data.town,
-              city: data.data.city,
-              property_type: data.data.property_type,
-              bedrooms: data.data.bedrooms,
-              bathrooms: data.data.bathrooms,
-              square_feet: data.data.square_feet,
-              amenities: data.data.amenities,
-              images: data.data.images,
-              status: data.data.status,
-              latitude: data.data.latitude,
-              longitude: data.data.longitude,
-              zip_code: data.data.zip_code,
+              title: data.title,
+              description: data.description,
+              price: data.price,
+              block: data.block,
+              street_name: data.street_name,
+              town: data.town,
+              city: data.city,
+              property_type: data.property_type,
+              bedrooms: data.bedrooms,
+              bathrooms: data.bathrooms,
+              square_feet: data.square_feet,
+              amenities: data.amenities,
+              images: data.images,
+              status: data.status,
+              latitude: data.latitude,
+              longitude: data.longitude,
+              zip_code: data.zip_code,
           });
 
-        setImages(data.images || []);
+        setImages(
+          (data.images || []).map((img: string) => 
+            img.startsWith('http') ? img : `http://localhost:8000/media/property_images/${img}`
+        ));
         setAmenities(
           typeof data.amenities === 'string'
             ? data.amenities.split(',').map((a: string) => a.trim())
@@ -204,7 +206,10 @@ export function PropertyDetailsPage() {
         longitude: updatedData.longitude,
         zip_code: updatedData.zip_code,
       });
-      setImages(updatedData.images || []);
+      setImages(
+        (updatedData.images || []).map((img: string) => 
+          img.startsWith('http') ? img : `http://localhost:8000/media/property_images/${img}`
+      ));
       setAmenities(
         typeof updatedData.amenities === 'string'
           ? updatedData.amenities.split(',').map((a: string) => a.trim())
@@ -274,8 +279,6 @@ export function PropertyDetailsPage() {
               </div>
             )}
           </div>
-
-          
 
           {/* Property Details */}
           <div className="mb-8">

@@ -4,14 +4,19 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ProgressSteps } from '../components/ui/progress-steps';
 import axios from "axios";
+import os from 'os';
+
 
 interface ListingFormData {
   title: string;
   description: string;
   price: number;
   location: string;
+  street_name: string;
   zip_code: string;
   road_name: string;
+  town: string;
+  city: string;
   block: string;
   longitude: number;
   latitude: number;
@@ -62,7 +67,6 @@ const STEPS = [
 
 export function CreateListingPage() {
   const navigate = useNavigate();
-  // const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [postalCode, setPostalCode] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -75,6 +79,9 @@ export function CreateListingPage() {
     zip_code: '',
     block: '',
     road_name: '',
+    street_name: '',
+    town: '',
+    city: '',
     longitude: 0,
     latitude: 0,
     coordinates: [1.3521, 103.8198], // Default to Singapore coordinates
@@ -86,6 +93,13 @@ export function CreateListingPage() {
     images: [],
     status: 'available',
   });
+  const SINGAPORE_TOWNS = [
+    'Ang Mo Kio', 'Bedok', 'Bishan', 'Bukit Batok', 'Bukit Merah', 'Bukit Panjang',
+    'Bukit Timah', 'Central Area', 'Choa Chu Kang', 'Clementi', 'Geylang', 'Hougang',
+    'Jurong East', 'Jurong West', 'Kallang/Whampoa', 'Marine Parade', 'Pasir Ris',
+    'Punggol', 'Queenstown', 'Sembawang', 'Sengkang', 'Serangoon', 'Tampines',
+    'Toa Payoh', 'Woodlands', 'Yishun'
+  ];
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,8 +138,7 @@ export function CreateListingPage() {
 
     checkAuth();
     return () => {
-      // Clean up object URLs when component unmounts
-      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [navigate, location, imagePreviews]);
   
@@ -144,8 +157,10 @@ export function CreateListingPage() {
       case 2:
         if (!formData.price || formData.price <= 0)
           newErrors.price = 'Price must be greater than 0';
-        if (!formData.location.trim()) newErrors.location = 'Location is required';
+        if (!formData.block.trim()) newErrors.block = 'Block number is required';
+        if (!formData.road_name.trim()) newErrors.road_name = 'Street name is required';
         if (formData.size <= 0) newErrors.size = 'Size must be greater than 0';
+        if (!formData.town) newErrors.town = 'You must select an area';
         break;
       case 3:
         if (formData.images.length === 0)
@@ -175,8 +190,16 @@ export function CreateListingPage() {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep((prev) => prev + 1);
-      window.scrollTo(0, 0);
+      if (currentStep === 3) {
+        setCurrentStep(currentStep + 1);
+        window.scrollTo(0, 0);
+        return;
+      }
+      if ((currentStep < 4)) {
+        // setCurrentStep((prev) => prev + 1);
+        setCurrentStep(currentStep + 1);
+        window.scrollTo(0, 0);
+      }
     }
   };
 
@@ -188,59 +211,38 @@ export function CreateListingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep(currentStep)) return;
-
+    if (currentStep != 4) return;
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
         throw new Error('Authentication token not found');
       }
-
-      // console.log('Processing zip code');
-      // console.log('Address:', formData.location);
       try {
         // const url = `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${formData.location}&returnGeom=Y&getAddrDetails=Y&pageNum=1`;
-        // const url = `https://developers.onemap.sg/commonapi/search?searchVal=${encodeURIComponent(formData.location)}&returnGeom=Y&getAddrDetails=Y`;
-
+        
+        formData.location = `${formData.block} ${formData.road_name}`;
+        console.log('Location:', formData.location);
         const response = await axios.get(`https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${formData.location}&returnGeom=Y&getAddrDetails=Y&pageNum=1`);
         const data = response.data;
         if (data.results && data.results.length > 0) {
-          const zip_code = data.results[0].POSTAL;
-          const block = data.results[0].BLK_NO;
-          const road_name = data.results[0].ROAD_NAME;
-          const longitude = data.results[0].LONGITUDE; 
-          const latitude = data.results[0].LATITUDE;
-          formData.zip_code = zip_code;
-          formData.block = block;
-          formData.road_name = road_name;
-          formData.longitude = longitude;
-          formData.latitude = latitude;
-          // formData.coordinates = [longitude, latitude];
-          // setFormData(prev => ({
-          //   ...prev,
-          //   zip_code,
-          //   block,
-          //   road_name,
-          //   longitude,
-          //   latitude,
-          //   coordinates: [longitude, latitude]
-          // }));
-          // console.log('block:', formData.block);
+          const { POSTAL, BLK_NO, ROAD_NAME, LONGITUDE, LATITUDE, ADDRESS } = data.results[0];
+          formData.zip_code = POSTAL;
+          formData.block = BLK_NO;
+          formData.road_name = ROAD_NAME;
+          formData.longitude = LONGITUDE;
+          formData.latitude = LATITUDE;
         }
       } catch (error) {
         console.error("Error fetching location code:", error);
       }
 
-      // console.log('Form Data:', formData);
-      // console.log('zip:', formData.zip_code);
-      // console.log('Listing:', formData);
-
       const propertyData = {
         title: formData.title,
         street_name: formData.road_name,
-        town: 'Singapore',
+        town: formData.town,
         city: 'Singapore',
-        location: `${formData.block} ${formData.road_name}`,
+        location: formData.location,
         longitude: formData.longitude,
         latitude: formData.latitude,
         zip_code: formData.zip_code,
@@ -255,7 +257,6 @@ export function CreateListingPage() {
         status: formData.status,
       };
 
-      // console.log('propertyData:', propertyData);
       const response = await fetch('http://127.0.0.1:8000/property/create/', {
         method: 'POST',
         headers: {
@@ -264,22 +265,19 @@ export function CreateListingPage() {
         },
         body: JSON.stringify(propertyData)
       });
-      // console.log('Response:', response);
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to create property');
       }
 
       const property = await response.json();
-      // console.log('Property:', property);
-      // console.log("Owner ID: ", property.property.owner);
       if (formData.images.length > 0) {
         const formDataImages = new FormData();
         formData.images.forEach((file) => {
           formDataImages.append('images', file);
         });
 
-        // console.log("Owner ID: ", property.property.owner);
         const imagesResponse = await fetch(`http://127.0.0.1:8000/property/details/${property.id}/images/`, {
           method: 'POST',
           headers: {
@@ -292,8 +290,7 @@ export function CreateListingPage() {
           throw new Error('Property created but failed to upload images');
         }
       }
-
-      
+      navigate('/my-listings')
     } catch (error) {
       console.error('Error:', error);
       setErrors({
@@ -305,25 +302,25 @@ export function CreateListingPage() {
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      if (files.length + formData.images.length > 10) {
-        setErrors({ images: 'Maximum 10 images allowed' });
-        return;
-      }
-
-      const newFiles = Array.from(files);
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...newFiles]
-      }));
-
-      const newPreviews = newFiles.map(file => URL.createObjectURL(file));
-      setImagePreviews(prev => [...prev, ...newPreviews]);
-      
-      setErrors(prev => ({ ...prev, images: undefined }));
+    const files = Array.from(e.target.files || []);
+  
+    if (files.length + formData.images.length > 10) {
+      setErrors(prev => ({ ...prev, images: 'Maximum 10 images allowed' }));
+      return;
     }
+  
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+  
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...files]
+    }));
+  
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+  
+    setErrors(prev => ({ ...prev, images: undefined }));
   };
+  
 
   const removeImage = (index: number) => {
     setFormData(prev => ({
@@ -345,7 +342,7 @@ export function CreateListingPage() {
   }
 
   if (!isAuthenticated) {
-    return null; // Redirect will happen in useEffect
+    return null;
   }
 
   return (
@@ -354,48 +351,33 @@ export function CreateListingPage() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-8">
             <h1 className="text-center text-3xl font-bold dark:text-white">Create New Listing</h1>
-            <p className="mt-2 text-center text-gray-600 dark:text-gray-400">
-              Fill in the details below to create your property listing
-            </p>
+            <p className="mt-2 text-center text-gray-600 dark:text-gray-400">Fill in the details below to create your property listing</p>
           </div>
-
-          <div className="mb-12">
-            <ProgressSteps steps={STEPS} currentStep={currentStep - 1} />
-          </div>
-
+          <div className="mb-12"><ProgressSteps steps={STEPS} currentStep={currentStep - 1}/></div>
           <div className="overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800">
             <form onSubmit={currentStep === 4 ? handleSubmit : (e) => e.preventDefault()} className="p-6">
               {currentStep === 1 && (
                 <div className="space-y-6">
                   <div className="border-b pb-4 dark:border-gray-700">
                     <h2 className="text-xl font-semibold dark:text-white">{STEPS[currentStep - 1]}</h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      Start with the basic details about your property
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Start with the basic details about your property</p>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Property Title</label>
-                    <input
-                      type="text"
-                      value={formData.title}
+                    <input type="text" value={formData.title}
                       onChange={(e) => {
                         setFormData((prev) => ({ ...prev, title: e.target.value }));
                         if (errors.title) validateStep(1);
                       }}
                       className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                      placeholder="e.g., Modern Condo in Orchard"
-                    />
+                      placeholder="e.g., Modern Condo in Orchard"/>
                     {errors.title && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title}</p>}
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Property Type</label>
                     <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
                       {PROPERTY_TYPES.map((type) => (
-                        <button
-                          key={type}
-                          type="button"
+                        <button key={type} type="button"
                           onClick={() => {
                             setFormData((prev) => ({ ...prev, type }));
                             if (errors.type) validateStep(1);
@@ -413,66 +395,46 @@ export function CreateListingPage() {
                     </div>
                     {errors.type && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.type}</p>}
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                    <textarea
-                      value={formData.description}
+                    <textarea value={formData.description}
                       onChange={(e) => {
                         setFormData((prev) => ({ ...prev, description: e.target.value }));
                         if (errors.description) validateStep(1);
                       }}
                       rows={4}
                       className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                      placeholder="Describe your property in detail..."
-                    />
-                    {errors.description && (
-                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description}</p>
-                    )}
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      Minimum 50 characters. Include key features, recent renovations, and nearby amenities.
-                    </p>
+                      placeholder="Describe your property in detail..."/>
+                    {errors.description && (<p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description}</p>)}
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Minimum 50 characters. Include key features, recent renovations, and nearby amenities.</p>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Listing Status</label>
-                    <select
-                      value={formData.status}
+                    <select value={formData.status}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
                           status: e.target.value as ListingFormData['status'],
                         }))
                       }
-                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    >
-                      {PROPERTY_STATUS.map((status) => (
-                        <option key={status.value} value={status.value}>
-                          {status.label}
-                        </option>
-                      ))}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                      {PROPERTY_STATUS.map((status) => (<option key={status.value} value={status.value}>{status.label}</option>))}
                     </select>
                   </div>
                 </div>
               )}
-
               {currentStep === 2 && (
                 <div className="space-y-6">
                   <div className="border-b pb-4 dark:border-gray-700">
                     <h2 className="text-xl font-semibold dark:text-white">{STEPS[currentStep - 1]}</h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      Set your property's location and pricing details
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Set your property's location and pricing details</p>
                   </div>
-
                   <div className="grid gap-6 md:grid-cols-2">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Monthly Rent</label>
                       <div className="mt-1 flex items-center">
                         <span className="text-gray-500 dark:text-gray-400">$</span>
-                        <input
-                          type="number"
-                          value={formData.price}
+                        <input type="number" value={formData.price}
                           onChange={(e) => {
                             setFormData((prev) => ({ ...prev, price: Number(e.target.value) }));
                             if (errors.price) validateStep(2);
@@ -484,12 +446,9 @@ export function CreateListingPage() {
                       </div>
                       {errors.price && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.price}</p>}
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Size (sqft)</label>
-                      <input
-                        type="number"
-                        value={formData.size}
+                      <input type="number" value={formData.size}
                         onChange={(e) => {
                           setFormData((prev) => ({ ...prev, size: Number(e.target.value) }));
                           if (errors.size) validateStep(2);
@@ -501,94 +460,75 @@ export function CreateListingPage() {
                       {errors.size && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.size}</p>}
                     </div>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
-                    <div className="mt-1 flex items-center">
-                      <MapPin className="mr-2 h-5 w-5 text-gray-400" />
-                      <input
-                        type="text"
-                        value={formData.location}
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Block Number</label>
+                      <input type="text" value={formData.block}
                         onChange={(e) => {
-                          setFormData((prev) => ({ ...prev, location: e.target.value }));
-                          if (errors.location) validateStep(2);
+                          setFormData((prev) => ({ ...prev, block: e.target.value }));
+                          if (errors.block) validateStep(2);
                         }}
-                        className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                        // placeholder="e.g. 123 Block 45 Orchard Road, #12-34"
-                        placeholder="e.g. 123 Block 45 Orchard Road"
-                      />
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        placeholder="e.g. 123"/>
+                      {errors.block && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.block}</p>}
                     </div>
-                    {errors.location && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.location}</p>}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Street Name</label>
+                      <input type="text" value={formData.road_name}
+                        onChange={(e) => {
+                          setFormData((prev) => ({ ...prev, road_name: e.target.value }));
+                          if (errors.road_name) validateStep(2);
+                        }}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        placeholder="e.g. Hougang Ave 1"/>
+                      {errors.road_name && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.road_name}</p>}
+                    </div>
                   </div>
-
-                  {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Postal Code</label>
-                      <input
-                        id="zip_code"
-                        name="zip_code"
-                        type="text"
-                        required
-                        value={formData.zip_code}
-                        onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
-                        placeholder="e.g. 123456"
-                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                      />
-                  </div> */}
-
+                  </div>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Area</label>
+                      <select value={formData.town} onChange={(e) => setFormData((prev) => ({ ...prev, town: e.target.value }))}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">Select the area</option>
+                        {SINGAPORE_TOWNS.map((town) => (<option key={town} value={town}>{town}</option>))}
+                        {!formData.town && (<option value="" disabled>Please select an area</option>)}
+                      </select>
+                    {errors.town && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.town}</p>}
+                    </div>
+                  </div>
                   <div className="grid gap-6 md:grid-cols-2">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bedrooms</label>
-                      <select
-                        value={formData.bedrooms}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, bedrooms: Number(e.target.value) }))
-                        }
-                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                      >
-                        {[1, 2, 3, 4, 5].map((num) => (
-                          <option key={num} value={num}>
-                            {num} {num === 1 ? 'Bedroom' : 'Bedrooms'}
-                          </option>
-                        ))}
+                      <select value={formData.bedrooms}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: Number(e.target.value) }))}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        {[1, 2, 3, 4, 5].map((num) => (<option key={num} value={num}>{num} {num === 1 ? 'Bedroom' : 'Bedrooms'}</option>))}
                       </select>
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bathrooms</label>
-                      <select
-                        value={formData.bathrooms}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, bathrooms: Number(e.target.value) }))
-                        }
-                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                      >
-                        {[1, 2, 3, 4].map((num) => (
-                          <option key={num} value={num}>
-                            {num} {num === 1 ? 'Bathroom' : 'Bathrooms'}
-                          </option>
-                        ))}
+                      <select value={formData.bathrooms} onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: Number(e.target.value) }))}
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        {[1, 2, 3, 4].map((num) => ( <option key={num} value={num} > {num} {num === 1 ? 'Bathroom' : 'Bathrooms'}</option>))}
                       </select>
                     </div>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Amenities</label>
                     <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
                       {AMENITIES.map((amenity) => (
                         <label key={amenity} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={formData.amenities.includes(amenity)}
-                            onChange={(e) => {
-                              setFormData((prev) => ({
+                          <input type="checkbox" checked={formData.amenities.includes(amenity)}
+                            onChange={(e) => { setFormData((prev) => ({
                                 ...prev,
                                 amenities: e.target.checked
                                   ? [...prev.amenities, amenity]
                                   : prev.amenities.filter((a) => a !== amenity),
                               }));
                             }}
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-                          />
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"/>
                           <span className="text-sm dark:text-gray-300">{amenity}</span>
                         </label>
                       ))}
@@ -596,16 +536,12 @@ export function CreateListingPage() {
                   </div>
                 </div>
               )}
-
               {currentStep === 3 && (
                 <div className="space-y-6">
                   <div className="border-b pb-4 dark:border-gray-700">
                     <h2 className="text-xl font-semibold dark:text-white">{STEPS[currentStep - 1]}</h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      Add photos and videos to showcase your property
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Add photos and videos to showcase your property</p>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Property Photos</label>
                     <div className="mt-2">
@@ -614,117 +550,55 @@ export function CreateListingPage() {
                           <div className="space-y-1 text-center">
                             <ImagePlus className="mx-auto h-12 w-12 text-gray-400" />
                             <div className="text-sm text-gray-600 dark:text-gray-400">
-                              <span className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
-                                Upload photos
-                              </span>{' '}
-                              or drag and drop
+                              <span className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">Upload photos</span>{' '}or drag and drop
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG up to 10MB each</p>
                           </div>
-                          <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleImageUpload}
-                          />
+                          <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload}/>
                         </label>
                       </div>
                       {errors.images && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.images}</p>}
-                      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Upload up to 10 high-quality images. First image will be the main listing photo.
-                      </p>
+                      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Upload up to 10 high-quality images. First image will be the main listing photo.</p>
                     </div>
-
-                    {/* {formData.images.length > 0 && (
-                      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                        {formData.images.map((image, index) => (
-                          <div key={index} className="relative aspect-square">
-                            <img
-                              src={image}
-                              alt={`Property ${index + 1}`}
-                              className="h-full w-full rounded-lg object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  images: prev.images.filter((_, i) => i !== index),
-                                }))
-                              }
-                              className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
-                            >
-                              <Upload className="h-4 w-4 rotate-45" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )} */}
                     {imagePreviews.length > 0 && (
                       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                         {imagePreviews.map((preview, index) => (
                           <div key={index} className="relative aspect-square">
-                            <img
-                              src={preview}
-                              alt={`Property preview ${index + 1}`}
-                              className="h-full w-full rounded-lg object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
-                            >
-                              <Upload className="h-4 w-4 rotate-45" />
-                            </button>
+                            <img src={preview} alt={`Property preview ${index + 1}`} className="h-full w-full rounded-lg object-contain"/>
+                            <button type="button" onClick={() => removeImage(index)}
+                              className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
+                              <Upload className="h-4 w-4 rotate-45"/></button>
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Video URL (Optional)</label>
-                    <input
-                      type="url"
-                      value={formData.videoUrl || ''}
-                      onChange={(e) => {
-                        setFormData((prev) => ({ ...prev, videoUrl: e.target.value }));
+                    <input type="url" value={formData.videoUrl || ''}
+                      onChange={(e) => { setFormData((prev) => ({ ...prev, videoUrl: e.target.value }));
                         if (errors.videoUrl) validateStep(3);
                       }}
                       className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                      placeholder="e.g., YouTube or Vimeo URL"
-                    />
+                      placeholder="e.g., YouTube or Vimeo URL"/>
                     {errors.videoUrl && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.videoUrl}</p>}
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      Add a video tour of your property (YouTube or Vimeo links only)
-                    </p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Add a video tour of your property (YouTube or Vimeo links only)</p>
                   </div>
                 </div>
               )}
-
               {currentStep === 4 && (
                 <div className="space-y-6">
                   <div className="border-b pb-4 dark:border-gray-700">
                     <h2 className="text-xl font-semibold dark:text-white">{STEPS[currentStep - 1]}</h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      Review your listing details before publishing
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Review your listing details before publishing</p>
                   </div>
-
                   <div className="rounded-lg border bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
                     <h2 className="mb-4 text-xl font-semibold dark:text-white">{formData.title}</h2>
-
                     {imagePreviews.length > 0 && (
                       <div className="mb-4 overflow-hidden rounded-lg">
-                        <img
-                          src={imagePreviews[0]}
-                          alt="Main property image"
-                          className="h-64 w-full object-cover"
-                        />
+                        <img src={imagePreviews[0]} alt="Main property image" className="h-64 w-full object-contain"/>
                       </div>
                     )}
-
                     <div className="mb-4 grid grid-cols-2 gap-4">
                       <div>
                         <span className="font-medium dark:text-white">Price:</span>{' '}
@@ -752,9 +626,7 @@ export function CreateListingPage() {
                       </div>
                       <div>
                         <span className="font-medium dark:text-white">Status:</span>{' '}
-                        <span className="dark:text-gray-300">
-                          {formData.status.charAt(0).toUpperCase() + formData.status.slice(1)}
-                        </span>
+                        <span className="dark:text-gray-300">{formData.status.charAt(0).toUpperCase() + formData.status.slice(1)}</span>
                       </div>
                     </div>
                     <div className="mb-4">
@@ -765,10 +637,8 @@ export function CreateListingPage() {
                       <span className="font-medium dark:text-white">Amenities:</span>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {formData.amenities.map((amenity) => (
-                          <span
-                            key={amenity}
-                            className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
-                          >
+                          <span key={amenity}
+                            className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
                             {amenity}
                           </span>
                         ))}
@@ -777,42 +647,23 @@ export function CreateListingPage() {
                   </div>
                 </div>
               )}
-
               <div className="mt-8 flex items-center justify-between border-t pt-6 dark:border-gray-700">
                 {currentStep > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleBack}
-                    className="px-6"
-                  >
-                    Back
-                  </Button>
+                  <Button type="button" variant="outline" onClick={handleBack} className="px-6">Back</Button>
                 )}
-                {currentStep < 4 ? (
-                  <Button
-                    type="button"
-                    onClick={handleNext}
-                    className={`px-6 ${currentStep === 1 ? 'ml-auto' : ''}`}
-                  >
-                    Continue
-                  </Button>
-                ) : (
-                    <Button
-                    type="submit"
-                    className="ml-auto px-6"
-                    disabled={isSubmitting}
-                    onClick={() => navigate('/my-listings')}
-                    >
+                {currentStep < 4 && (
+                  <Button type="button" onClick={handleNext} className={`px-6 ${currentStep === 1 ? 'ml-auto' : ''}`}>Continue</Button>
+                )}
+                {currentStep == 4 && (
+                  // <Button type="submit" className="ml-auto px-6" disabled={isSubmitting} onClick={() => navigate('/my-listings')}>
+                  // {isSubmitting ? 'Publishing...' : 'Publish Listing'}
+                  // </Button>
+                  <Button type='submit' className='ml-auto px-6' onClick={(handleSubmit)} disabled={isSubmitting}>
                     {isSubmitting ? 'Publishing...' : 'Publish Listing'}
-                    </Button>
-
+                  </Button>
                 )}
               </div>
-
-              {errors.submit && (
-                <p className="mt-4 text-center text-sm text-red-600 dark:text-red-400">{errors.submit}</p>
-              )}
+              {errors.submit && ( <p className="mt-4 text-center text-sm text-red-600 dark:text-red-400">{errors.submit}</p> )}
             </form>
           </div>
         </div>
