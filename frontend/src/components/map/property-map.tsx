@@ -1,4 +1,5 @@
 import { Icon } from 'leaflet';
+import L from 'leaflet'
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useRef, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, ZoomControl } from 'react-leaflet';

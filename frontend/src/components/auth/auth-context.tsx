@@ -33,6 +33,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('authToken');
     if (token) {
       setIsAuthenticated(true);
+      const fetchUser = async () => {
+        try {
+          const response = await axios.get('http://localhost:8000/account/users/me', {
+            headers: {
+              'Authorization': `Token ${token}`,
+            },
+          });
+          setUser(response.data);
+        } catch (error) {
+          console.error('Error fetching user:', error);
+          setIsAuthenticated(false);
+        }
+      };
+      fetchUser();
     }
   }, []);
 
