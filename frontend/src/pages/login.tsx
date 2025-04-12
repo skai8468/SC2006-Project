@@ -36,12 +36,8 @@ export function LoginPage() {
         },
       });
 
-      // console.log('Login successful:', userResponse.data);
       const user = userResponse.data;
       login(token, user);
-      // localStorage.setItem('authToken', token);
-
-      // navigate('/');
 
     } catch (error) {
       if (axios.isAxiosError(error)) {

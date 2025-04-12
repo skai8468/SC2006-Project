@@ -232,11 +232,13 @@ export function CreateListingPage() {
           formData.road_name = ROAD_NAME;
           formData.longitude = LONGITUDE;
           formData.latitude = LATITUDE;
+          formData.location = ADDRESS;
         }
       } catch (error) {
         console.error("Error fetching location code:", error);
       }
 
+      console.log('Address:', formData.location);
       const propertyData = {
         title: formData.title,
         street_name: formData.road_name,
@@ -614,7 +616,7 @@ export function CreateListingPage() {
                       </div>
                       <div>
                         <span className="font-medium dark:text-white">Location:</span>{' '}
-                        <span className="dark:text-gray-300">{formData.location}</span>
+                        <span className="dark:text-gray-300">{formData.block} {formData.road_name}</span>
                       </div>
                       <div>
                         <span className="font-medium dark:text-white">Bedrooms:</span>{' '}
