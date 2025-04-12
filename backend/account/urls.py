@@ -11,4 +11,7 @@ urlpatterns = [
     path('delete/', views.DeleteUserView.as_view(), name='delete_user'),
     path('login/', views.LoginUserView.as_view(), name='login_user'),
     path('logout/', views.LogoutUserView.as_view(), name='logout_user'),
+    path('favorite/', views.UserFavoritePropertiesView.as_view(), name='user_favorite_properties'),
+    path('favorite/add/', views.AddToFavoritesView.as_view(), name='add_to_favorites'),
+    path('favorite/remove/', views.RemoveFromFavoritesView.as_view(), name='remove_from_favorites'),    
 ]
