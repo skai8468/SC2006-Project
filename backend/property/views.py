@@ -52,6 +52,53 @@ class PropertyImageUploadView(APIView):
         except Property.DoesNotExist:
             return Response({'message': 'Property not found'}, status=status.HTTP_404_NOT_FOUND)
     
+# Upload to property request image table
+class PropertyRequestImageUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, property_request_id):
+        try:
+            property_request = PropertyRequest.objects.get(id=property_request_id)
+
+            # Check if the user is the owner of the property
+            if request.user != property_request.user:
+                return Response(
+                    {'message': 'You do not have permission to upload images for this request'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Handle multiple image uploads
+            images = request.FILES.getlist('images')
+            if not images:
+                return Response(
+                    {'message': 'No images provided'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            for image in images:
+                PropertyRequestImage.objects.create(
+                    property=property_request,
+                    image=image
+                )
+
+            print("Property Request Image: ", PropertyRequestImage.objects.filter(property=property_request))
+            print("id: ", property_request.id)
+
+            return Response({
+                'message': 'Images uploaded successfully',
+                'property_request_id': property_request.id,
+                'image_urls': [
+                    request.build_absolute_uri(img.image.url) 
+                    for img in property_request.images.all()
+                ]
+            }, status=status.HTTP_201_CREATED)
+
+        except Property.DoesNotExist:
+            return Response(
+                {'message': 'Property request not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
 # view all properties
 class PropertyListView(generics.ListAPIView):
     queryset = Property.objects.all()
@@ -146,31 +193,25 @@ class PropertyDeleteView(generics.DestroyAPIView):
     
 # request to create a new property
 class CreatePropertyRequestView(generics.CreateAPIView):
-    parser_classes = (MultiPartParser, FormParser)
     queryset = PropertyRequest.objects.all()
     serializer_class = PropertyRequestSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
     
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-
-        if serializer.is_valid():
-            property_request = serializer.save(user=request.user)
-            print("Property request created:", property_request)
-            images = request.FILES.getlist('images')
-            for image in images:
-                PropertyRequest.objects.create(property=property_request, image=image)
-                print("Image uploaded:", image.name)
-
-            return Response({
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        try:
+            if serializer.is_valid():
+                propertyRequest = serializer.save(user=request.user)
+                return Response({
                     "message": "Property request created successfully",
                     "property_request": serializer.data,
-                    'images': [img.image.url for img in PropertyRequest.objects.filter(property=property_request)]
-                },
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    "id": propertyRequest.id,
+                }, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 # request for updating a property
 class UpdatePropertyRequestView(generics.CreateAPIView):
@@ -346,6 +387,11 @@ class RejectPropertyRequestView(generics.GenericAPIView):
         if not request.user.is_staff and not request.user.is_superuser:
             return Response({"message": "You do not have permission to reject this request"}, status=403)
         
+        for image in PropertyRequestImage.objects.filter(property=property_request):
+            if image.image and os.path.isfile(image.image.path):
+                os.remove(image.image.path)
+            image.delete()
+            
         # delete the property request
         property_request.delete()
         return Response({"message": "Property request rejected successfully"}, status=status.HTTP_200_OK)

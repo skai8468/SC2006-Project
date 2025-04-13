@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ProgressSteps } from '../components/ui/progress-steps';
 import axios from "axios";
-import os from 'os';
-import { post } from 'node_modules/axios/index.d.cts';
 
 
 interface ListingFormData {
@@ -238,57 +236,35 @@ export function CreateListingPage() {
       } catch (error) {
         console.error("Error fetching location code:", error);
       }
-      // console.log('Address:', formData.location);
-      const propertyFormData = new FormData();
-      // const propertyRequestData = {
-      //   title: formData.title,
-      //   street_name: formData.road_name,
-      //   town: formData.town,
-      //   city: 'Singapore',
-      //   location: formData.location,
-      //   longitude: formData.longitude,
-      //   latitude: formData.latitude,
-      //   zip_code: formData.zip_code,
-      //   description: formData.description,
-      //   block: formData.block,
-      //   price: formData.price,
-      //   bedrooms: formData.bedrooms,
-      //   bathrooms: formData.bathrooms,
-      //   square_feet: formData.size,
-      //   property_type: formData.type,
-      //   amenities: formData.amenities.join(', '),
-      //   status: formData.status,
-      // };
-      propertyFormData.append('title', formData.title);
-      propertyFormData.append('street_name', formData.road_name);
-      propertyFormData.append('town', formData.town);
-      propertyFormData.append('city', 'Singapore');
-      propertyFormData.append('location', formData.location);
-      propertyFormData.append('longitude', String(formData.longitude));
-      propertyFormData.append('latitude', String(formData.latitude));
-      propertyFormData.append('zip_code', formData.zip_code);
-      propertyFormData.append('description', formData.description);
-      propertyFormData.append('block', formData.block);
-      propertyFormData.append('price', String(formData.price));
-      propertyFormData.append('bedrooms', String(formData.bedrooms));
-      propertyFormData.append('bathrooms', String(formData.bathrooms));
-      propertyFormData.append('square_feet', String(formData.size));
-      propertyFormData.append('property_type', formData.type);
-      propertyFormData.append('amenities', JSON.stringify(formData.amenities));
-      propertyFormData.append('status', formData.status);
-
-      formData.images.forEach((file) => {
-        propertyFormData.append('images', file);
-      });
+      console.log('Address:', formData.location);
+      const propertyRequestData = {
+        title: formData.title,
+        street_name: formData.road_name,
+        town: formData.town,
+        city: 'Singapore',
+        location: formData.location,
+        longitude: formData.longitude,
+        latitude: formData.latitude,
+        zip_code: formData.zip_code,
+        description: formData.description,
+        block: formData.block,
+        price: formData.price,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        square_feet: formData.size,
+        property_type: formData.type,
+        amenities: formData.amenities.join(', '),
+        status: formData.status,
+      };
 
       const response = await fetch('http://127.0.0.1:8000/property/creating-request/', {
         method: 'POST',
         headers: {
-          // 'Content-Type': 'application/json',
+          'Content-Type': 'application/json',
           'Authorization': `Token ${token}`
         },
-        // body: JSON.stringify(propertyRequestData)
-        body: propertyFormData
+        body: JSON.stringify(propertyRequestData)
+        // body: propertyFormData
       });
 
       if (!response.ok) {
@@ -299,19 +275,30 @@ export function CreateListingPage() {
 
       const property = await response.json();
       console.log('Property created:', property);
+      console.log('Property ID:', property.property_request.id);
 
-        // try {
-        //   // const imagesResponse = await fetch(`http://127.0.0.1:8000/property/details/${property.id}/images/`, {
-        //   const imagesResponse = await fetch(`http://127.0.0.1:8000/property/details/${nextId}/images/`, {
-        //     method: 'POST',
-        //     headers: {
-        //       'Authorization': `Token ${token}`
-        //     },
-        //     body: formDataImages
-        //   });
-        // } catch (error) {
-        //   console.error('Error uploading images:', error);
-        // }
+      if (formData.images.length > 0) {
+        const formDataImages = new FormData();
+        formData.images.forEach((file) => {
+          formDataImages.append('images', file); // Use same field name for all files
+        });
+
+        const imagesResponse = await fetch(`http://127.0.0.1:8000/property/creating-request/${property.property_request.id}/images/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${token}`
+          },
+          body: formDataImages
+        });
+
+        if (!imagesResponse.ok) {
+          const errorData = await imagesResponse.json();
+          throw new Error(errorData.message || 'Failed to upload images');
+        }
+        
+        const imagesData = await imagesResponse.json();
+        console.log('Images uploaded:', imagesData);
+      }
       
       navigate('/my-listings')
     } catch (error) {

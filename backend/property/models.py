@@ -24,7 +24,7 @@ class Property(models.Model):
         ('sold', 'Sold'),
     ]
 
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='properties_owned', default=None)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_properties', default=None)
     title = models.CharField(max_length=100, blank=False, null=False, default="Property Listing")
     block = models.CharField(max_length=20, blank=True, null=True)  # e.g., "460 - 530"
     street_name = models.CharField(max_length=100, blank=False, null=False)  # e.g., "Lorong 6 Toa Payoh"
@@ -89,7 +89,8 @@ class PropertyRequest(models.Model):
     # for new properties, this can remain null.
     property = models.ForeignKey(Property, on_delete=models.CASCADE, null=True, blank=True)
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='property_requests', default=None)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Snapshot fields for new property requests.
@@ -120,7 +121,6 @@ class PropertyRequest(models.Model):
     description = models.TextField(blank=True, null=True)
     latitude = models.DecimalField(max_digits=20, decimal_places=14, blank=True, null=True)
     longitude = models.DecimalField(max_digits=20, decimal_places=14, blank=True, null=True)
-    image = models.ImageField(upload_to='propertyrequest_images/', blank=True, null=True)
     
     request_type = models.CharField(
         max_length=20,
@@ -165,3 +165,8 @@ class PropertyRequest(models.Model):
     def __str__(self):
         snapshot_title = self.property.title if self.property else self.title or "Unknown Property"
         return f"Request for {snapshot_title} by {self.user.username}"
+    
+class PropertyRequestImage(models.Model):
+    property = models.ForeignKey(PropertyRequest, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='property_request_images/')
+    created_at = models.DateTimeField(auto_now_add=True)
