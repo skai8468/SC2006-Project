@@ -45,6 +45,11 @@ class UpdatePropertySerializer(serializers.ModelSerializer):
 
 # property request serializer
 class PropertyRequestSerializer(serializers.ModelSerializer):
+    images = serializers.ListField(
+        child=serializers.ImageField(),
+        write_only=True,
+        required=False
+    )
     class Meta:
         model = PropertyRequest
         fields = '__all__'

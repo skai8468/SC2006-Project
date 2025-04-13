@@ -6,6 +6,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 from django.shortcuts import get_object_or_404, render
 
@@ -23,7 +25,6 @@ class TokenVerifyView(APIView):
             "username": request.user.username,
             "email": request.user.email,
         })
-    
 
 class PropertyImageUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -145,6 +146,7 @@ class PropertyDeleteView(generics.DestroyAPIView):
     
 # request to create a new property
 class CreatePropertyRequestView(generics.CreateAPIView):
+    parser_classes = (MultiPartParser, FormParser)
     queryset = PropertyRequest.objects.all()
     serializer_class = PropertyRequestSerializer
     permission_classes = [IsAuthenticated]
@@ -152,11 +154,19 @@ class CreatePropertyRequestView(generics.CreateAPIView):
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
+
         if serializer.is_valid():
             property_request = serializer.save(user=request.user)
+            print("Property request created:", property_request)
+            images = request.FILES.getlist('images')
+            for image in images:
+                PropertyRequest.objects.create(property=property_request, image=image)
+                print("Image uploaded:", image.name)
+
             return Response({
                     "message": "Property request created successfully",
-                    "property_request": serializer.data
+                    "property_request": serializer.data,
+                    'images': [img.image.url for img in PropertyRequest.objects.filter(property=property_request)]
                 },
                 status=status.HTTP_201_CREATED
             )

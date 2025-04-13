@@ -120,6 +120,7 @@ class PropertyRequest(models.Model):
     description = models.TextField(blank=True, null=True)
     latitude = models.DecimalField(max_digits=20, decimal_places=14, blank=True, null=True)
     longitude = models.DecimalField(max_digits=20, decimal_places=14, blank=True, null=True)
+    image = models.ImageField(upload_to='propertyrequest_images/', blank=True, null=True)
     
     request_type = models.CharField(
         max_length=20,
