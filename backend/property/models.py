@@ -69,6 +69,10 @@ class Property(models.Model):
         if not self.amenities:
             self.amenities = self.set_default_amenities()
         super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+         self.favorited_by.clear()
+         super().delete(*args, **kwargs)
 
     def __str__(self):
         return self.title
@@ -94,7 +98,7 @@ class PropertyRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Snapshot fields for new property requests.
-    title = models.CharField(max_length=100, blank=True, null=True)
+    title = models.CharField(max_length=35, blank=True, null=True)
     block = models.CharField(max_length=20, blank=True, null=True)
     street_name = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=100, blank=True, null=True)

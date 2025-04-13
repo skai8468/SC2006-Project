@@ -142,6 +142,8 @@ class PropertyDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
+    def get_object(self):
+        return self.request.user.property_set.get(pk=self.kwargs['pk'])
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -155,10 +157,12 @@ class PropertyDeleteView(generics.DestroyAPIView):
                 os.remove(image.image.path)
             image.delete()
 
-        self.perform_destroy(instance)
+        instance.delete()
+        self.perform_destroy(instance) # not sure will this work with the code above (might need to remove the one above)
         return Response({
             "message": "Property deleted successfully"
         }, status=status.HTTP_200_OK)
+    
 
 class UserPropertiesView(generics.ListAPIView):
     serializer_class = PropertySerializer

@@ -43,6 +43,16 @@ interface Property {
   zip_code: string;
 }
 
+interface User {
+  id: number;
+  username: string;
+}
+
+interface PropertyDetailsPageState {
+  currentUser: User | null;
+  isFavorite: boolean;
+}
+
 export function PropertyDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -85,16 +95,22 @@ export function PropertyDetailsPage() {
         try {
           if (token) {
             try {
-              const [userRequest, propertyRequest] = await Promise.all([
+              const [userRequest, propertyRequest, favoritesRequest] = await Promise.all([
                   axios.get('http://localhost:8000/property/api/auth/verify/', {
                       headers: { Authorization: `Token ${token}` },
                   }),
                   axios.get(`http://localhost:8000/property/details/${id}`),
+                  axios.get('http://localhost:8000/account/favorite/', {
+                    headers: { Authorization: `Token ${token}` },
+                  }),
               ]);
               setCurrentUser(userRequest.data);
+              const isFav = favoritesRequest.data.some((fav: any) => fav.id === parseInt(id));
+              setIsFavorite(isFav);
             } catch (error) {
               console.warn('User not authenticated or token invalid');
               setCurrentUser(null);
+              setIsFavorite(false);
             }
           }
 
@@ -142,6 +158,55 @@ export function PropertyDetailsPage() {
   }, [id, token]);
 
   const handleEditToggle = () => setIsEditing(prev => !prev);
+
+  const handleAddToFavorites = async () => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await axios.post(
+        'http://localhost:8000/account/favorite/add/',
+        { property_id: id },
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+          },
+        }
+      );
+      setIsFavorite(true);
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
+    }
+  };
+
+  const handleRemoveFromFavorites = async () => {
+    if (!token) return;
+
+    try {
+      await axios.post(
+        'http://localhost:8000/account/favorite/remove/',
+        { property_id: id },
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+          },
+        }
+      );
+      setIsFavorite(false);
+    } catch (error) {
+      console.error('Error removing from favorites:', error);
+    }
+  };
+
+  const handleFavoriteToggle = () => {
+    if (isFavorite) {
+      handleRemoveFromFavorites();
+    } else {
+      handleAddToFavorites();
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -298,7 +363,7 @@ export function PropertyDetailsPage() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setIsFavorite(!isFavorite)}
+                  onClick={handleFavoriteToggle}
                   className={isFavorite ? 'text-red-500' : ''}
                 >
                   <Heart className="mr-2 h-5 w-5" fill={isFavorite ? 'currentColor' : 'none'} />
