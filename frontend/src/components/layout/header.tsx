@@ -12,6 +12,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
   const navigate = useNavigate();
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
