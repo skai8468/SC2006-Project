@@ -6,6 +6,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 from django.shortcuts import get_object_or_404, render
 
@@ -23,7 +25,6 @@ class TokenVerifyView(APIView):
             "username": request.user.username,
             "email": request.user.email,
         })
-    
 
 class PropertyImageUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -51,6 +52,53 @@ class PropertyImageUploadView(APIView):
         except Property.DoesNotExist:
             return Response({'message': 'Property not found'}, status=status.HTTP_404_NOT_FOUND)
     
+# Upload to property request image table
+class PropertyRequestImageUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, property_request_id):
+        try:
+            property_request = PropertyRequest.objects.get(id=property_request_id)
+
+            # Check if the user is the owner of the property
+            if request.user != property_request.user:
+                return Response(
+                    {'message': 'You do not have permission to upload images for this request'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Handle multiple image uploads
+            images = request.FILES.getlist('images')
+            if not images:
+                return Response(
+                    {'message': 'No images provided'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            for image in images:
+                PropertyRequestImage.objects.create(
+                    property=property_request,
+                    image=image
+                )
+
+            print("Property Request Image: ", PropertyRequestImage.objects.filter(property=property_request))
+            print("id: ", property_request.id)
+
+            return Response({
+                'message': 'Images uploaded successfully',
+                'property_request_id': property_request.id,
+                'image_urls': [
+                    request.build_absolute_uri(img.image.url) 
+                    for img in property_request.images.all()
+                ]
+            }, status=status.HTTP_201_CREATED)
+
+        except Property.DoesNotExist:
+            return Response(
+                {'message': 'Property request not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
 # view all properties
 class PropertyListView(generics.ListAPIView):
     queryset = Property.objects.all()
@@ -94,6 +142,8 @@ class PropertyDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [TokenAuthentication]
 
+    def get_object(self):
+        return self.request.user.property_set.get(pk=self.kwargs['pk'])
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -107,10 +157,12 @@ class PropertyDeleteView(generics.DestroyAPIView):
                 os.remove(image.image.path)
             image.delete()
 
-        self.perform_destroy(instance)
+        instance.delete()
+        self.perform_destroy(instance) # not sure will this work with the code above (might need to remove the one above)
         return Response({
             "message": "Property deleted successfully"
         }, status=status.HTTP_200_OK)
+    
 
 class UserPropertiesView(generics.ListAPIView):
     serializer_class = PropertySerializer
@@ -151,16 +203,19 @@ class CreatePropertyRequestView(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
     
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            property_request = serializer.save(user=request.user)
-            return Response({
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        try:
+            if serializer.is_valid():
+                propertyRequest = serializer.save(user=request.user)
+                return Response({
                     "message": "Property request created successfully",
-                    "property_request": serializer.data
-                },
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    "property_request": serializer.data,
+                    "id": propertyRequest.id,
+                }, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 # request for updating a property
 class UpdatePropertyRequestView(generics.CreateAPIView):
@@ -336,6 +391,11 @@ class RejectPropertyRequestView(generics.GenericAPIView):
         if not request.user.is_staff and not request.user.is_superuser:
             return Response({"message": "You do not have permission to reject this request"}, status=403)
         
+        for image in PropertyRequestImage.objects.filter(property=property_request):
+            if image.image and os.path.isfile(image.image.path):
+                os.remove(image.image.path)
+            image.delete()
+            
         # delete the property request
         property_request.delete()
         return Response({"message": "Property request rejected successfully"}, status=status.HTTP_200_OK)
