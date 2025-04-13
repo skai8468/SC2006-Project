@@ -14,7 +14,7 @@ export interface Property {
   square_feet: number;
   type: string;           // use same naming as model; e.g., "HDB", "Condo", etc.
   status: string;                  // "available", "rented", "sold", etc.
-  amenities: any;                  // more specific type if you know the structure, e.g. Record<string, boolean>
+  amenities: string[];                  // more specific type if you know the structure, e.g. Record<string, boolean>
   description?: string | null;
   image: string;                   // not sure
   address?: string;                 // not sure
@@ -60,4 +60,10 @@ export interface PropertyRequest {
   longitude?: number | null;
   request_type: 'new' | 'update';
   created_at?: Date | string;
+}
+
+// Define an interface for price history data for charting.
+export interface PriceHistoryEntry {
+  month: string; // e.g. 'May', 'Jun', etc.
+  price: number;
 }

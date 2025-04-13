@@ -12,6 +12,7 @@ import { PropertyDetailsPage } from "./pages/property-details";
 import { RegisterPage } from "./pages/register";
 import { AuthProvider } from "./components/auth/auth-context";
 import { AdminDashboard } from "./pages/admin-dashboard";
+import { PropertyRequestDetails } from "./pages/PropertyRequestDetails";
 
 function App() {
   return (
@@ -31,6 +32,10 @@ function App() {
               <Route path="/create-listing" element={<CreateListingPage />} />
               <Route path="/my-listings" element={<MyListingsPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route
+                path="/requests/:id"
+                element={<PropertyRequestDetails />}
+              />
             </Routes>
           </main>
           <Footer />

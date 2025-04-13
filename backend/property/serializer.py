@@ -3,6 +3,7 @@ from .models import *
         
 class PropertySerializer(serializers.ModelSerializer):
     images = serializers.SerializerMethodField()
+    amenities = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         model = Property
@@ -21,6 +22,7 @@ class PropertySerializer(serializers.ModelSerializer):
         return image_urls
         
 class UpdatePropertySerializer(serializers.ModelSerializer):
+    amenities = serializers.ListField(child=serializers.CharField(), required=False)
     class Meta:
         model = Property
         fields = '__all__'
@@ -45,6 +47,7 @@ class UpdatePropertySerializer(serializers.ModelSerializer):
 
 # property request serializer
 class PropertyRequestSerializer(serializers.ModelSerializer):
+    amenities = serializers.ListField(child=serializers.CharField(), required=False)
     class Meta:
         model = PropertyRequest
         fields = '__all__'
@@ -62,6 +65,7 @@ class PropertyImageSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(obj.image.url)
         
 class UpdatePropertyRequestSerializer(serializers.ModelSerializer):
+    amenities = serializers.ListField(child=serializers.CharField(), required=False)
     class Meta:
         model = PropertyRequest
         fields = '__all__'

@@ -106,17 +106,23 @@ export function AdminDashboard() {
                   <li key={req.id}>
                     <div className="px-4 py-4 sm:px-6 hover:bg-gray-50">
                       <div className="flex items-center justify-between">
-                        <div className="flex-1 cursor-pointer">
-                          <p className="text-sm font-medium text-blue-600 truncate">
-                            {req.title || "No title"}
-                          </p>
-                          <p className="mt-2 text-sm text-gray-500">
-                            {req.location || "No location"}
-                          </p>
-                          <p className="mt-2 text-sm text-gray-500">
-                            Owner: {req.user || "Unknown"}
-                          </p>
-                        </div>
+                        <Link
+                          to={`/requests/${req.id}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <div className="flex-1 cursor-pointer">
+                            <p className="text-sm font-medium text-blue-600 truncate">
+                              {req.title || "No title"}
+                            </p>
+                            <p className="mt-2 text-sm text-gray-500">
+                              {req.location || "No location"}
+                            </p>
+                            <p className="mt-2 text-sm text-gray-500">
+                              Owner: {req.user || "Unknown"}
+                            </p>
+                          </div>
+                        </Link>
+                        .
                         <div className="ml-4 flex items-center space-x-2">
                           <button
                             onClick={() => handleApprove(req.id)}

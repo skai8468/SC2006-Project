@@ -38,7 +38,7 @@ class Property(models.Model):
     square_feet = models.IntegerField(default=0, validators=[validate_non_negative])
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPES, default='HDB')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
-    amenities = models.JSONField(default=dict)
+    amenities = models.JSONField(default=list, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     latitude = models.DecimalField(max_digits=20, decimal_places=14, blank=True, null=True)
     longitude = models.DecimalField(max_digits=20, decimal_places=14, blank=True, null=True)
@@ -116,7 +116,7 @@ class PropertyRequest(models.Model):
         blank=True,
         null=True
     )
-    amenities = models.JSONField(default=dict, blank=True, null=True)
+    amenities = models.JSONField(default=list, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     latitude = models.DecimalField(max_digits=20, decimal_places=14, blank=True, null=True)
     longitude = models.DecimalField(max_digits=20, decimal_places=14, blank=True, null=True)
