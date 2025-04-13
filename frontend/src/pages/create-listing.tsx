@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ProgressSteps } from '../components/ui/progress-steps';
 import axios from "axios";
-import os from 'os';
 
 
 interface ListingFormData {
@@ -237,9 +236,8 @@ export function CreateListingPage() {
       } catch (error) {
         console.error("Error fetching location code:", error);
       }
-
       console.log('Address:', formData.location);
-      const propertyData = {
+      const propertyRequestData = {
         title: formData.title,
         street_name: formData.road_name,
         town: formData.town,
@@ -259,28 +257,33 @@ export function CreateListingPage() {
         status: formData.status,
       };
 
-      const response = await fetch('http://127.0.0.1:8000/property/create/', {
+      const response = await fetch('http://127.0.0.1:8000/property/creating-request/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Token ${token}`
         },
-        body: JSON.stringify(propertyData)
+        body: JSON.stringify(propertyRequestData)
+        // body: propertyFormData
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Server response error:", errorData);
         throw new Error(errorData.message || 'Failed to create property');
       }
 
       const property = await response.json();
+      console.log('Property created:', property);
+      console.log('Property ID:', property.property_request.id);
+
       if (formData.images.length > 0) {
         const formDataImages = new FormData();
         formData.images.forEach((file) => {
-          formDataImages.append('images', file);
+          formDataImages.append('images', file); // Use same field name for all files
         });
 
-        const imagesResponse = await fetch(`http://127.0.0.1:8000/property/details/${property.id}/images/`, {
+        const imagesResponse = await fetch(`http://127.0.0.1:8000/property/creating-request/${property.property_request.id}/images/`, {
           method: 'POST',
           headers: {
             'Authorization': `Token ${token}`
@@ -289,9 +292,14 @@ export function CreateListingPage() {
         });
 
         if (!imagesResponse.ok) {
-          throw new Error('Property created but failed to upload images');
+          const errorData = await imagesResponse.json();
+          throw new Error(errorData.message || 'Failed to upload images');
         }
+        
+        const imagesData = await imagesResponse.json();
+        console.log('Images uploaded:', imagesData);
       }
+      
       navigate('/my-listings')
     } catch (error) {
       console.error('Error:', error);
