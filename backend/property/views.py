@@ -373,6 +373,13 @@ class AcceptPropertyRequestView(generics.GenericAPIView):
             except Property.DoesNotExist:
                 return Response({"message": "Property not found"}, status=status.HTTP_404_NOT_FOUND)
         # delete the property request
+        # move image to property_images inside media
+        for property_request_image in property_request.images.all():
+            # Step 2: Create new PropertyImage instances
+            PropertyImage.objects.create(property=property_instance, image=property_request_image.image)
+        
+        # Step 3: Delete PropertyRequestImage instances after moving
+        property_request.images.all().delete()
         property_request.delete()
         return Response({"message": "Property request accepted successfully"}, status=status.HTTP_200_OK)
 

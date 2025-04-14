@@ -253,7 +253,7 @@ export function CreateListingPage() {
         bathrooms: formData.bathrooms,
         square_feet: formData.size,
         property_type: formData.type,
-        amenities: formData.amenities.join(', '),
+        amenities: formData.amenities,
         status: formData.status,
       };
 
