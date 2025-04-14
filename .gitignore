@@ -2,6 +2,4 @@ env/
 venv/
 .venv/
 node_modules/
-backend/db.sqlite3
-backend/db.sqlite3-journal
 
