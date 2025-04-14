@@ -12,7 +12,7 @@ interface PropertyCardProps {
   bathrooms: number;
   square_feet: number;
   type: string;
-  image: string;
+  images: string;
   isNew?: boolean;
 }
 
@@ -25,7 +25,7 @@ export function PropertyCard({
   bathrooms = 0,
   square_feet: sqft = 0,
   type,
-  image = '/placeholder.jpg',
+  images = '/placeholder.jpg',
   isNew = false,
 }: PropertyCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
@@ -82,10 +82,10 @@ export function PropertyCard({
       {/* Property Image */}
       <div className="relative">
         <PropertyImage
-          src={image}
+          src={images}
           alt={title}
           aspectRatio="3/2"
-          className="w-full transition-transform duration-300 group-hover:scale-105"
+          className="w-full transition-transform duration-300 group-hover:scale-105 object-contain"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
       </div>

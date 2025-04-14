@@ -45,7 +45,6 @@ export function PropertiesPage() {
   // Apply filters to properties
   const filteredProperties = properties.filter((property) => {
     // console.log(`Checking property ${property.id}:`, property);
-    
     // Search query
     if (
       searchQuery &&
@@ -94,18 +93,14 @@ export function PropertiesPage() {
     return true;
   });
 
-  // Convert properties to map format
   const mapProperties: MapProperty[] = filteredProperties.map((property) => ({
     id: property.id,
     title: property.title,
     price: property.price,
     location: property.location,
     coordinates: [parseFloat(property.latitude), parseFloat(property.longitude)],
-    image: property.image,
+    image: property.images[0],
   }));
-
-  // console.log('All properties:', properties);
-  // console.log('Filtered properties:', filteredProperties);
 
   return (
     <div className="container mx-auto flex h-[calc(100vh-4rem)] gap-4 p-4">

@@ -16,6 +16,7 @@ urlpatterns = [
     path('details/<int:pk>/delete/', views.PropertyDeleteView.as_view(), name='delete_property'),
     path('details/<int:property_id>/images/', views.PropertyImageUploadView.as_view(), name='upload_images'),
     path('creating-request/', views.CreatePropertyRequestView.as_view(), name='create_property_request'),
+    path('creating-request/<int:property_request_id>/images/', views.PropertyRequestImageUploadView.as_view(), name='upload_request_images'),
     path('updating-request/', views.UpdatePropertyRequestView.as_view(), name='update_property_request'),
     path('requests/', views.PropertyRequestListView.as_view(), name='property_requests'),
     path('requests/<int:pk>/', views.PropertyRequestDetailView.as_view(), name='property_request_detail'),
@@ -24,4 +25,5 @@ urlpatterns = [
     path('api/auth/verify/', views.TokenVerifyView.as_view(), name='token-verify'),
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
