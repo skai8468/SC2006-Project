@@ -87,7 +87,7 @@ class LoginUserView(generics.GenericAPIView):
         
         if user:
             token, created = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key, "message": "Login successful"}, status=200)
+            return Response({"token": token.key, "is_staff": user.is_staff, "message": "Login successful"}, status=200)
         return Response({"message": "Invalid credentials"}, status=400)
     
 # logout a user

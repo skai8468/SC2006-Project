@@ -3,6 +3,7 @@ from .models import *
         
 class PropertySerializer(serializers.ModelSerializer):
     images = serializers.SerializerMethodField()
+    amenities = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         model = Property
@@ -21,6 +22,7 @@ class PropertySerializer(serializers.ModelSerializer):
         return image_urls
         
 class UpdatePropertySerializer(serializers.ModelSerializer):
+    amenities = serializers.ListField(child=serializers.CharField(), required=False)
     class Meta:
         model = Property
         fields = '__all__'
@@ -45,10 +47,41 @@ class UpdatePropertySerializer(serializers.ModelSerializer):
 
 # property request serializer
 class PropertyRequestSerializer(serializers.ModelSerializer):
+    amenities = serializers.ListField(child=serializers.CharField(), required=False)
+    # images = serializers.SerializerMethodField()
     class Meta:
         model = PropertyRequest
         fields = '__all__'
         read_only_fields = ['created_at', 'user']
+        extra_kwargs = {
+            'user': {'read_only': True},
+        }
+
+    def create(self, validated_data):
+        images = validated_data.pop('images', [])
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        validated_data['user'] = self.context['request'].user
+
+        property_request = super().create(validated_data)
+
+        for image in images:
+            PropertyRequestImage.objects.create(property=property_request, image=image)
+
+        return property_request
+
+    def get_images(self, obj):
+        request = self.context.get('request')
+        images = obj.images.all()
+        image_urls = []
+
+        for image in images:
+            image_url = request.build_absolute_uri(image.image.url)
+            print(f"Image URL: {image_url}")
+            image_urls.append(image_url)
+            
+        return image_urls
 
 class PropertyImageSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
@@ -62,6 +95,7 @@ class PropertyImageSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(obj.image.url)
         
 class UpdatePropertyRequestSerializer(serializers.ModelSerializer):
+    amenities = serializers.ListField(child=serializers.CharField(), required=False)
     class Meta:
         model = PropertyRequest
         fields = '__all__'
